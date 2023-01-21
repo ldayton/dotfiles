@@ -1,0 +1,6 @@
+# brew "ack"
+brew "cloc"
+brew "fzf"
+brew "jq"
+# brew "oh-my-zsh"
+

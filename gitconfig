@@ -1,0 +1,21 @@
+[user]
+	name = Lily Dayton
+	email = lily.dayton.git@gmail.com
+[pull]
+	rebase = false
+# [credential]
+# 	helper = osxkeychain
+[alias]
+	co = checkout
+	ci = commit
+	br = branch
+	st = status
+[push]
+	default = simple
+[init]
+	defaultBranch = main
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
