@@ -1,3 +1,5 @@
+# Fig pre block. Keep at the top of this file.
+[[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.pre.zsh"
 # oh-my-zsh
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="jonathan"
@@ -22,3 +24,6 @@ HISTORY_IGNORE="(ll|ls|cd|pwd|exit|exit:history|..|...|....)"
 setopt INC_APPEND_HISTORY  # immediately append to history
 setopt EXTENDED_HISTORY  # add timestamp
 setopt HIST_IGNORE_DUPS  # don't add consecutive dups
+
+# Fig post block. Keep at the bottom of this file.
+[[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"
