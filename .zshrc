@@ -25,13 +25,16 @@ setopt EXTENDED_HISTORY   # add timestamp
 setopt HIST_IGNORE_DUPS   # don't add consecutive dups
 
 #--- text editor ---#
-export EDITOR=vim
+export EDITOR=vi
 
 #--- fzf history ---#
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 
 #--- rip ---#
 export XDG_DATA_HOME="${HOME}/.graveyard"
+
+#--- pnpm ---#
+export PATH="${PATH}:${PNPM_HOME}"
 
 #--- add setup.sh to PATH ---#
 if [ -e "${CODESPACE}" ]; then

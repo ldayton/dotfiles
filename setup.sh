@@ -33,3 +33,16 @@ safelink ".ackrc"
 brew bundle --file "${DOT_DIR}/brewfile" -q
 brew update -q
 brew upgrade -q
+
+#--- NPM global installs ---#
+export PNPM_HOME="${HOME}/.pnpm"
+export PATH="${PATH}:${PNPM_HOME}"
+pnpm install -g \
+  cypress \
+  eslint \
+  jest \
+  npm-check-updates \
+  playwright \
+  prettier \
+  vite \
+  vitest
