@@ -34,6 +34,7 @@ export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 export XDG_DATA_HOME="${HOME}/.graveyard"
 
 #--- pnpm ---#
+export PNPM_HOME="${HOME}/.pnpm"
 export PATH="${PATH}:${PNPM_HOME}"
 
 #--- add setup.sh to PATH ---#
