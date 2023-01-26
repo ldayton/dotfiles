@@ -1,15 +1,17 @@
 # Fig pre block. Keep at the top of this file.
 [[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.pre.zsh"
+
 # oh-my-zsh
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="jonathan"
 HYPHEN_INSENSITIVE="true"
-zstyle ':omz:update' mode auto      # update automatically without asking
-zstyle ':omz:update' frequency 13 # how often to auto-update (in days)
+zstyle ':omz:update' mode auto     # update automatically without asking
+zstyle ':omz:update' frequency 13  # how often to auto-update (in days)
 COMPLETION_WAITING_DOTS="true"
 plugins=(
     git
-    z
+    fzf
+    zoxide
 )
 source $ZSH/oh-my-zsh.sh
 
@@ -22,8 +24,11 @@ HISTSIZE=1000000000
 SAVEHIST=1000000000
 HISTORY_IGNORE="(ll|ls|cd|pwd|exit|exit:history|..|...|....)"
 setopt INC_APPEND_HISTORY  # immediately append to history
-setopt EXTENDED_HISTORY  # add timestamp
-setopt HIST_IGNORE_DUPS  # don't add consecutive dups
+setopt EXTENDED_HISTORY    # add timestamp
+setopt HIST_IGNORE_DUPS    # don't add consecutive dups
+
+# ctrl+R
+export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 
 # Fig post block. Keep at the bottom of this file.
 [[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"

@@ -9,3 +9,10 @@ brew "tree"
 brew "vim"
 brew "wget"
 brew "watch"
+
+# trying out
+brew "bat"
+brew "diff-so-fancy"
+brew "dog"
+brew "scc"
+brew "tldr"
