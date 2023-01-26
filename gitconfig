@@ -3,8 +3,6 @@
 	email = lily.dayton.git@gmail.com
 [pull]
 	rebase = false
-# [credential]
-# 	helper = osxkeychain
 [alias]
 	co = checkout
 	ci = commit
