@@ -1,7 +1,7 @@
-# Fig pre block. Keep at the top of this file.
+#--- Fig pre block ---#
 [[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.pre.zsh"
 
-# oh-my-zsh
+#--- oh-my-zsh ---#
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="jonathan"
 HYPHEN_INSENSITIVE="true"
@@ -15,10 +15,7 @@ plugins=(
 )
 source $ZSH/oh-my-zsh.sh
 
-# text editors
-export EDITOR=vim
-
-# history settings
+#--- history settings ---#
 HISTFILE=~/.zsh_history
 HISTSIZE=1000000000
 SAVEHIST=1000000000
@@ -27,8 +24,16 @@ setopt INC_APPEND_HISTORY  # immediately append to history
 setopt EXTENDED_HISTORY    # add timestamp
 setopt HIST_IGNORE_DUPS    # don't add consecutive dups
 
-# ctrl+R
+#--- text editor ---#
+export EDITOR=vim
+
+#--- fzf history ---#
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 
-# Fig post block. Keep at the bottom of this file.
+#--- add setup.sh to PATH ---#
+if [ -e "${CODESPACE}" ]; then DOT_DIR='/workspaces/.codespaces/.persistedshare/dotfiles';
+else DOT_DIR="${HOME}/source/dotfiles"; fi
+export PATH="${PATH}:${DOT_DIR}"
+
+#-- Fig post block ---#
 [[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"

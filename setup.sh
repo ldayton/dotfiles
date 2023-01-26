@@ -3,13 +3,8 @@
 set -ex
 
 #--- Where is DOT_DIR? ---#
-if [ -e "${CODESPACE}" ]; then
-    DOT_DIR='/workspaces/.codespaces/.persistedshare/dotfiles'
-fi
-
-if [ "$(uname)" = 'Darwin' ]; then
-    DOT_DIR="${HOME}/source/dotfiles"
-fi
+if [ -e "${CODESPACE}" ]; then DOT_DIR='/workspaces/.codespaces/.persistedshare/dotfiles';
+else DOT_DIR="${HOME}/source/dotfiles"; fi
 
 #--- Backup and link dot files ---#
 if [ -f "${HOME}/.zshrc" ]; then
@@ -31,14 +26,6 @@ fi
 ln -s "${DOT_DIR}/ackrc" "${HOME}/.ackrc"
 
 #--- Homebrew bundle ---#
-if [ -e "${CODESPACE}" ]; then
-  brew bundle --file="${DOT_DIR}/brewfile.codespaces"
-fi
-
-if [ "$(uname)" = 'Darwin' ]; then
-  brew bundle --file="${DOT_DIR}/brewfile.darwin"
-fi
-
-brew update;
-brew upgrade;
-
+brew bundle
+brew update
+brew upgrade

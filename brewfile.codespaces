@@ -1,6 +1,0 @@
-brew "ack"
-brew "cloc"
-brew "fzf"
-brew "jq"
-
-
