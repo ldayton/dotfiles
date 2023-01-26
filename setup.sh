@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -ex
+set -e
 
 #--- Where is DOT_DIR? ---#
 if [ -e "${CODESPACE}" ]; then
