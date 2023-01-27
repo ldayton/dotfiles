@@ -36,6 +36,7 @@ export XDG_DATA_HOME="${HOME}/.graveyard"
 #--- pnpm ---#
 export PNPM_HOME="${HOME}/.pnpm"
 export PATH="${PATH}:${PNPM_HOME}"
+alias p="pnpm"
 
 #--- add setup.sh to PATH ---#
 if [ -e "${CODESPACE}" ]; then

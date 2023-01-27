@@ -28,6 +28,7 @@ safelink() {
 safelink ".zshrc"
 safelink ".gitconfig"
 safelink ".ackrc"
+safelink ".hyper.js"
 
 #--- Homebrew bundle ---#
 brew bundle --file "${DOT_DIR}/brewfile" -q
