@@ -46,4 +46,5 @@ pnpm install -g \
   playwright \
   prettier \
   vite \
-  vitest
+  vitest \
+  typescript
