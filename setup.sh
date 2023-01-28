@@ -42,6 +42,7 @@ pnpm install -g \
   cypress \
   eslint \
   jest \
+  lighthouse \
   npm-check-updates \
   playwright \
   prettier \
