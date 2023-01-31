@@ -43,9 +43,11 @@ pnpm install -g \
   eslint \
   jest \
   lighthouse \
+  netlify-cli \
   npm-check-updates \
   playwright \
   prettier \
   vite \
   vitest \
+  @types/node \
   typescript
