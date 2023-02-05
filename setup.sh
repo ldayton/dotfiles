@@ -45,9 +45,13 @@ pnpm install -g \
   lighthouse \
   netlify-cli \
   npm-check-updates \
+  npm-run-all \
   playwright \
   prettier \
   vite \
   vitest \
   @types/node \
   typescript
+
+#--- Update oh-my-zsh ---#
+omz update
