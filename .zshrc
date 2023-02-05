@@ -3,7 +3,8 @@
 
 #--- oh-my-zsh ---#
 export ZSH="$HOME/.oh-my-zsh"
-ZSH_THEME="jonathan"
+# ZSH_THEME="jonathan"
+ZSH_THEME="robbyrussell"
 HYPHEN_INSENSITIVE="true"
 zstyle ':omz:update' mode auto    # update automatically without asking
 zstyle ':omz:update' frequency 13 # how often to auto-update (in days)
