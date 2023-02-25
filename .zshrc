@@ -34,6 +34,12 @@ export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 #--- rip ---#
 export XDG_DATA_HOME="${HOME}/.graveyard"
 
+#--- nvm ---#
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "/usr/local/opt/nvm/nvm.sh" ] && \. "/usr/local/opt/nvm/nvm.sh"
+[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/usr/local/opt/nvm/etc/bash_completion.d/nvm"
+
 #--- pnpm ---#
 export PNPM_HOME="${HOME}/.pnpm"
 export PATH="${PATH}:${PNPM_HOME}"
