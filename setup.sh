@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/sh
 
 set -e
 
@@ -54,5 +54,4 @@ pnpm install -g \
   typescript
 
 #--- Update oh-my-zsh ---#
-. "${HOME}/.oh-my-zsh/oh-my-zsh.sh"
-omz update
+/bin/zsh -c ". ${HOME}/.oh-my-zsh/oh-my-zsh.sh && omz update"
