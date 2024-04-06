@@ -14,6 +14,7 @@ plugins=(
     fzf
     zoxide
 )
+DISABLE_MAGIC_FUNCTIONS=true  # disable url escaping on paste
 source $ZSH/oh-my-zsh.sh
 
 #--- history settings ---#
@@ -53,5 +54,12 @@ else
 fi
 export PATH="${PATH}:${DOT_DIR}"
 
+#-- shortcuts --#
+alias y="yt-dlp -f mp4"
+
+#-- python --#
+source virtualenvwrapper.sh
+
 #-- Fig post block ---#
 [[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"
+alias o='open .'
