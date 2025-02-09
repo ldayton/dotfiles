@@ -1,6 +1,3 @@
-#--- Fig pre block ---#
-[[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.pre.zsh"
-
 #--- oh-my-zsh ---#
 export ZSH="$HOME/.oh-my-zsh"
 # ZSH_THEME="jonathan"
@@ -32,8 +29,6 @@ export EDITOR=vi
 #--- fzf history ---#
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 
-#--- rip ---#
-export XDG_DATA_HOME="${HOME}/.graveyard"
 
 #--- nvm ---#
 
@@ -55,11 +50,7 @@ fi
 export PATH="${PATH}:${DOT_DIR}"
 
 #-- shortcuts --#
-alias y="yt-dlp -f mp4"
+alias y="yt-dlp"
 
 #-- python --#
-source virtualenvwrapper.sh
-
-#-- Fig post block ---#
-[[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"
-alias o='open .'
+# source virtualenvwrapper.sh
