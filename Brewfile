@@ -29,7 +29,7 @@ brew "exiftool"    # read and write EXIF metadata
 brew "yt-dlp"      # download videos from YouTube and other sites
 
 # Development Utilities
-brew "cloc"        # count lines of code in many languages
+brew "tokei"       # fast code statistics with pretty output
 
 # Shell
 brew "starship"    # minimal, blazing-fast shell prompt
