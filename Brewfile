@@ -1,6 +1,7 @@
 # Development Tools
 brew "git"         # distributed version control system
 brew "gh"          # GitHub's official command line tool
+brew "lazygit"     # simple terminal UI for git commands
 brew "node"        # JavaScript runtime built on V8
 brew "pnpm"        # fast, disk space efficient package manager
 brew "python"      # interpreted, interactive, object-oriented programming language
