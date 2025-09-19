@@ -1,10 +1,14 @@
 {
+  // Fonts
+  "editor.fontFamily": "'Fira Code', 'Comic Sans MS'",
+  // "editor.fontFamily": "'JetBrains Mono', 'Comic Sans MS'",
+  // "editor.fontFamily": "'Cascadia Code', 'Comic Sans MS'",
+  // "editor.fontWeight": "600",
+
   // Editor settings
   "editor.accessibilitySupport": "off",
-  "editor.fontFamily": "'JetBrains Mono', 'Comic Sans MS'",
   "editor.fontSize": 14,
   "editor.fontLigatures": true,
-  "editor.fontWeight": "600",
   "editor.inlineSuggest.enabled": true,
   "editor.linkedEditing": true,
   "editor.minimap.enabled": false,
@@ -54,6 +58,7 @@
   },
 
   // Rust-analyzer settings
+  "rust-analyzer.cargo.targetDir": true,
   "rust-analyzer.check.command": "clippy",
   "rust-analyzer.inlayHints.typeHints.enable": true,
   "rust-analyzer.semanticHighlighting.strings.enable": true,
