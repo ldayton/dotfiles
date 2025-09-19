@@ -22,6 +22,7 @@ export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 source <(fzf --zsh)
 
 #--- aliases ---#
-alias ll="ls -lh"
-alias la="ls -lah"
+alias ls="eza"
+alias ll="eza -lh"
+alias la="eza -lah"
 alias y="yt-dlp"
