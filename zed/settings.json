@@ -1,0 +1,55 @@
+{
+  // UI
+  "theme": {
+    "mode": "system",
+    "light": "One Light",
+    "dark": "One Dark"
+  },
+  "ui_font_size": 16,
+  "buffer_font_size": 15,
+  "indent_guides": {
+    "enabled": true
+  },
+
+  // Editor
+  "format_on_save": "on",
+
+  // File Explorer
+  "file_scan_exclusions": [
+    "**/.git"
+  ],
+
+  // Terminal
+  "terminal": {
+    "env": {
+      "RUST_BACKTRACE": "1"
+    }
+  },
+
+  // Language Servers
+  "lsp": {
+    "rust-analyzer": {
+      "initialization_options": {
+        "check": {
+          "command": "clippy"
+        },
+        "inlayHints": {
+          "typeHints": {
+            "enable": true
+          },
+          "parameterHints": {
+            "enable": true
+          }
+        },
+        "diagnostics": {
+          "experimental": {
+            "enable": true
+          }
+        },
+        "procMacro": {
+          "enable": true
+        }
+      }
+    }
+  }
+}

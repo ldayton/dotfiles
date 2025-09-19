@@ -58,6 +58,15 @@
   "rust-analyzer.semanticHighlighting.strings.enable": true,
   "rust-analyzer.semanticHighlighting.operator.enable": true,
 
+  // Debug rust-analyzer crashes
+  "rust-analyzer.server.extraEnv": {
+    "RA_LOG": "info",
+    "RUST_BACKTRACE": "1"
+  },
+
+  // Verbose logging for troubleshooting
+  "rust-analyzer.trace.server": "verbose",
+
   // Other settings
   "redhat.telemetry.enabled": false,
   "update.showReleaseNotes": false
