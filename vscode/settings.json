@@ -1,0 +1,64 @@
+{
+  // Editor settings
+  "editor.accessibilitySupport": "off",
+  "editor.fontFamily": "'JetBrains Mono', 'Comic Sans MS'",
+  "editor.fontSize": 14,
+  "editor.fontLigatures": true,
+  "editor.fontWeight": "600",
+  "editor.inlineSuggest.enabled": true,
+  "editor.linkedEditing": true,
+  "editor.minimap.enabled": false,
+  "editor.renderWhitespace": "trailing",
+  "editor.tabSize": 2,
+  "editor.wordWrap": "on",
+
+  // Workbench settings
+  "workbench.colorTheme": "Visual Studio Dark",
+  "workbench.preferredHighContrastColorTheme": "Default High Contrast Light",
+  "workbench.startupEditor": "none",
+
+  // Bracket pair colorization
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+
+  // Files settings
+  "files.autoSave": "afterDelay",
+
+  // Explorer settings
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+
+  // Git settings
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "git.openRepositoryInParentFolders": "never",
+
+  // Terminal settings
+  "terminal.integrated.confirmOnKill": "never",
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  "terminal.integrated.fontSize": 13,
+
+  // Language-specific settings
+  "[python]": {
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.formatOnType": true,
+    "editor.wordBasedSuggestions": "off"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+  },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+
+  // Rust-analyzer settings
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.inlayHints.typeHints.enable": true,
+  "rust-analyzer.semanticHighlighting.strings.enable": true,
+  "rust-analyzer.semanticHighlighting.operator.enable": true,
+
+  // Other settings
+  "redhat.telemetry.enabled": false,
+  "update.showReleaseNotes": false
+}

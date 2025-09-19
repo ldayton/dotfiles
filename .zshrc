@@ -1,56 +1,27 @@
-#--- oh-my-zsh ---#
-export ZSH="$HOME/.oh-my-zsh"
-# ZSH_THEME="jonathan"
-ZSH_THEME="robbyrussell"
-HYPHEN_INSENSITIVE="true"
-zstyle ':omz:update' mode auto    # update automatically without asking
-zstyle ':omz:update' frequency 13 # how often to auto-update (in days)
-COMPLETION_WAITING_DOTS="true"
-plugins=(
-    git
-    fzf
-    zoxide
-)
-DISABLE_MAGIC_FUNCTIONS=true  # disable url escaping on paste
-source $ZSH/oh-my-zsh.sh
+#--- environment setup ---#
+eval "$(/opt/homebrew/bin/brew shellenv)"
 
-#--- history settings ---#
-HISTFILE=~/.zsh_history
-HISTSIZE=1000000000
-SAVEHIST=1000000000
-HISTORY_IGNORE="(ll|ls|cd|pwd|exit|exit:history|..|...|....)"
-setopt INC_APPEND_HISTORY # immediately append to history
-setopt EXTENDED_HISTORY   # add timestamp
-setopt HIST_IGNORE_DUPS   # don't add consecutive dups
+#--- history ---#
+HISTFILE=~/.zsh_history    # where to save history
+HISTSIZE=1000000000        # number of commands to keep in memory during session
+SAVEHIST=1000000000        # number of commands to save to disk
+HISTORY_IGNORE="(ll|ls|cd|pwd|exit|history|..|...|....)" # patterns to exclude from history
+setopt INC_APPEND_HISTORY  # add commands to history immediately, not on shell exit
+setopt EXTENDED_HISTORY    # save timestamp and duration with each command
+setopt HIST_IGNORE_DUPS    # don't save command if it's same as the previous one
+setopt HIST_IGNORE_SPACE   # don't save commands that start with a space
+setopt SHARE_HISTORY       # share history between all terminal sessions in real-time
 
-#--- text editor ---#
-export EDITOR=vi
+#--- completions ---#
+autoload -Uz compinit && compinit
 
-#--- fzf history ---#
+#--- interactive tools ---#
+eval "$(starship init zsh)"
+eval "$(zoxide init zsh)"
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
+source <(fzf --zsh)
 
-
-#--- nvm ---#
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "/usr/local/opt/nvm/nvm.sh" ] && \. "/usr/local/opt/nvm/nvm.sh"
-[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/usr/local/opt/nvm/etc/bash_completion.d/nvm"
-
-#--- pnpm ---#
-export PNPM_HOME="${HOME}/.pnpm"
-export PATH="${PATH}:${PNPM_HOME}"
-alias p="pnpm"
-
-#--- add setup.sh to PATH ---#
-if [ -e "${CODESPACE}" ]; then
-    DOT_DIR='/workspaces/.codespaces/.persistedshare/dotfiles'
-else
-    DOT_DIR="${HOME}/ldayton/dotfiles"
-fi
-export PATH="${PATH}:${DOT_DIR}"
-
-#-- shortcuts --#
+#--- aliases ---#
+alias ll="ls -lh"
+alias la="ls -lah"
 alias y="yt-dlp"
-
-#-- python --#
-# source virtualenvwrapper.sh
