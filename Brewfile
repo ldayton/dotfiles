@@ -3,7 +3,6 @@ brew "git"         # distributed version control system
 brew "gh"          # GitHub's official command line tool
 brew "node"        # JavaScript runtime built on V8
 brew "pnpm"        # fast, disk space efficient package manager
-brew "deno"        # secure JavaScript/TypeScript runtime
 brew "python"      # interpreted, interactive, object-oriented programming language
 brew "rust"        # fast and memory-efficient language
 
@@ -35,6 +34,6 @@ brew "tokei"       # fast code statistics with pretty output
 brew "starship"    # minimal, blazing-fast shell prompt
 
 # Fonts
-cask "font-jetbrains-mono"   # JetBrains IDE font with ligatures
-cask "font-fira-code"        # monospaced font with programming ligatures
 cask "font-cascadia-code"    # Microsoft's modern terminal font
+cask "font-fira-code"        # monospaced font with programming ligatures
+cask "font-jetbrains-mono"   # JetBrains IDE font with ligatures
