@@ -38,6 +38,7 @@
   "terminal.integrated.confirmOnKill": "never",
   "terminal.integrated.defaultProfile.linux": "zsh",
   "terminal.integrated.fontSize": 13,
+  "terminal.integrated.shellIntegration.enabled": false,
 
   // Language-specific settings
   "[python]": {

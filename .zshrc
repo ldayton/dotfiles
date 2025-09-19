@@ -21,7 +21,6 @@ eval "$(zoxide init zsh)"
 
 # fzf configuration - must come after other tools that might override bindings
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
-# Use modern fzf setup (requires fzf 0.48.0+)
 eval "$(fzf --zsh)"
 
 #--- aliases ---#
