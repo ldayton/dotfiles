@@ -1,5 +1,8 @@
 #--- environment setup ---#
-eval "$(/opt/homebrew/bin/brew shellenv)"
+# Only run brew shellenv if on macOS
+if [[ -f /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
 
 #--- history ---#
 HISTFILE=~/.zsh_history    # where to save history
@@ -16,16 +19,33 @@ setopt SHARE_HISTORY       # share history between all terminal sessions in real
 autoload -Uz compinit && compinit
 
 #--- interactive tools ---#
-eval "$(starship init zsh)"
-eval "$(zoxide init zsh)"
+if [[ -x "$HOME/.local/bin/starship" ]]; then
+    eval "$($HOME/.local/bin/starship init zsh)"
+elif command -v starship &> /dev/null; then
+    eval "$(starship init zsh)"
+fi
 
-# fzf configuration - must come after other tools that might override bindings
+if command -v zoxide &> /dev/null; then
+    eval "$(zoxide init zsh)"
+fi
+
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
-eval "$(fzf --zsh)"
+if command -v fzf &> /dev/null; then
+    if fzf --zsh &> /dev/null 2>&1; then
+        eval "$(fzf --zsh)"
+    else
+        [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+    fi
+fi
 
 #--- aliases ---#
-alias ls="eza"
-alias ll="eza -lh"
-alias la="eza -lah"
+if command -v eza &> /dev/null; then
+    alias ls="eza"
+    alias ll="eza -lh"
+    alias la="eza -lah"
+else
+    alias ll="ls -lh"
+    alias la="ls -lah"
+fi
 alias y="yt-dlp"
 alias lg="lazygit"
