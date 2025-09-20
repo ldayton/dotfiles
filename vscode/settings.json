@@ -17,7 +17,7 @@
   "editor.wordWrap": "on",
 
   // Workbench settings
-  "workbench.colorTheme": "Visual Studio Dark",
+  "workbench.colorTheme": "Default High Contrast",
   "workbench.preferredHighContrastColorTheme": "Default High Contrast Light",
   "workbench.startupEditor": "none",
 
