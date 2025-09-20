@@ -27,6 +27,7 @@ brew "wget"        # retrieve files from the web
 brew "ffmpeg"      # record, convert and stream audio/video
 brew "exiftool"    # read and write EXIF metadata
 brew "imagemagick" # create, edit, compose, or convert bitmap images
+brew "libicns"     # library and tools for manipulating Mac OS icns files
 brew "yt-dlp"      # download videos from YouTube and other sites
 
 # Development Utilities
