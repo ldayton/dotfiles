@@ -18,7 +18,7 @@
   "editor.wordWrap": "on",
 
   // Workbench settings
-  "workbench.colorTheme": "Quiet Light",
+  "workbench.colorTheme": "Default High Contrast",
   "workbench.preferredHighContrastColorTheme": "Default High Contrast Light",
   "workbench.startupEditor": "none",
 

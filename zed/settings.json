@@ -2,7 +2,7 @@
   // UI
   "theme": {
     "mode": "light",
-    "light": "Ayu Light",
+    "light": "Ayu Dark",
     "dark": "Ayu Dark"
   },
   "ui_font_size": 16,
