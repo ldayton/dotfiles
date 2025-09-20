@@ -31,6 +31,7 @@ brew "libicns"     # library and tools for manipulating Mac OS icns files
 brew "yt-dlp"      # download videos from YouTube and other sites
 
 # Development Utilities
+brew "libsoup@2"   # HTTP library implementation in C
 brew "tokei"       # fast code statistics with pretty output
 brew "webkitgtk"   # GTK port of the WebKit browser engine
 
