@@ -35,6 +35,7 @@ brew "tokei"       # fast code statistics with pretty output
 brew "starship"    # minimal, blazing-fast shell prompt
 
 # Fonts
-cask "font-cascadia-code"    # Microsoft's modern terminal font
-cask "font-fira-code"        # monospaced font with programming ligatures
-cask "font-jetbrains-mono"   # JetBrains IDE font with ligatures
+cask "font-caskaydia-cove-nerd-font"   # Microsoft's modern terminal font with icons
+cask "font-fira-code-nerd-font"        # monospaced font with programming ligatures and icons
+cask "font-jetbrains-mono-nerd-font"   # JetBrains IDE font with ligatures and icons
+cask "font-zed-mono-nerd-font"         # Zed editor font with icons

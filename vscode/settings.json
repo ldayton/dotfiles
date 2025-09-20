@@ -1,8 +1,9 @@
 {
   // Fonts
-  "editor.fontFamily": "'Fira Code', 'Comic Sans MS'",
-  // "editor.fontFamily": "'JetBrains Mono', 'Comic Sans MS'",
-  // "editor.fontFamily": "'Cascadia Code', 'Comic Sans MS'",
+  // "editor.fontFamily": "'ZedMono Nerd Font Mono', 'Courier New'",
+  // "editor.fontFamily": "'FiraCode Nerd Font Mono', 'Courier New'",
+  // "editor.fontFamily": "'JetBrainsMono Nerd Font Mono', 'Courier New'",
+  "editor.fontFamily": "'CaskaydiaCove Nerd Font Mono', 'Courier New'",
   // "editor.fontWeight": "600",
 
   // Editor settings
