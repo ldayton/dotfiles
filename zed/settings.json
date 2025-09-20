@@ -1,9 +1,9 @@
 {
   // UI
   "theme": {
-    "mode": "system",
-    "light": "One Light",
-    "dark": "One Dark"
+    "mode": "light",
+    "light": "Ayu Light",
+    "dark": "Ayu Dark"
   },
   "ui_font_size": 16,
   "buffer_font_size": 15,
@@ -12,12 +12,15 @@
   },
 
   // Editor
+  "autosave": {
+    "after_delay": {
+      "milliseconds": 1000
+    }
+  },
   "format_on_save": "on",
 
   // File Explorer
-  "file_scan_exclusions": [
-    "**/.git"
-  ],
+  "file_scan_exclusions": ["**/.git"],
 
   // Terminal
   "terminal": {
