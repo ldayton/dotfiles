@@ -26,6 +26,7 @@ brew "wget"        # retrieve files from the web
 # Media Tools
 brew "ffmpeg"      # record, convert and stream audio/video
 brew "exiftool"    # read and write EXIF metadata
+brew "imagemagick" # create, edit, compose, or convert bitmap images
 brew "yt-dlp"      # download videos from YouTube and other sites
 
 # Development Utilities
