@@ -1,7 +1,8 @@
-#--- environment setup ---#
-# Only run brew shellenv if on macOS
+#--- homebrew setup ---#
 if [[ -f /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
+else
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
 #--- history ---#
@@ -49,3 +50,4 @@ else
 fi
 alias y="yt-dlp"
 alias lg="lazygit"
+alias claude='npx @anthropic-ai/claude-code'

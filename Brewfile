@@ -35,6 +35,7 @@ brew "tokei"       # fast code statistics with pretty output
 
 # Shell
 brew "starship"    # minimal, blazing-fast shell prompt
+brew "zsh"         # extended Bourne shell with many improvements
 
 # Fonts
 cask "font-caskaydia-cove-nerd-font"   # Microsoft's modern terminal font with icons
