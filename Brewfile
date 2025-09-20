@@ -32,6 +32,7 @@ brew "yt-dlp"      # download videos from YouTube and other sites
 
 # Development Utilities
 brew "tokei"       # fast code statistics with pretty output
+brew "webkitgtk"   # GTK port of the WebKit browser engine
 
 # Shell
 brew "starship"    # minimal, blazing-fast shell prompt
