@@ -52,3 +52,12 @@ alias ..="cd .."
 alias y="yt-dlp"
 alias lg="lazygit"
 alias claude='npx @anthropic-ai/claude-code'
+
+#--- fix key bindings ---#
+bindkey "^[[H" beginning-of-line     # Home key
+bindkey "^[[F" end-of-line           # End key
+bindkey "^[OH" beginning-of-line     # Home key (alternative)
+bindkey "^[OF" end-of-line           # End key (alternative)
+bindkey "^[[1~" beginning-of-line    # Home key (another variant)
+bindkey "^[[4~" end-of-line          # End key (another variant)
+bindkey "^[[3~" delete-char          # Delete key
