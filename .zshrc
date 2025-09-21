@@ -48,6 +48,7 @@ else
     alias ll="ls -lh"
     alias la="ls -lah"
 fi
+alias ..="cd .."
 alias y="yt-dlp"
 alias lg="lazygit"
 alias claude='npx @anthropic-ai/claude-code'
