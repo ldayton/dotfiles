@@ -42,9 +42,10 @@
   // Terminal settings
   "terminal.integrated.confirmOnKill": "never",
   "terminal.integrated.defaultProfile.linux": "zsh",
-  "terminal.integrated.fontFamily": "BigBlueTerminal Nerd Font",
   "terminal.integrated.fontSize": 16,
   "terminal.integrated.shellIntegration.enabled": false,
+  "terminal.integrated.cursorStyle": "block",
+  "terminal.integrated.copyOnSelection": true,
 
   // Language-specific settings
   "[python]": {
