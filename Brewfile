@@ -6,6 +6,7 @@ brew "node"        # JavaScript runtime built on V8
 brew "pnpm"        # fast, disk space efficient package manager
 brew "python"      # interpreted, interactive, object-oriented programming language
 brew "rust"        # fast and memory-efficient language
+brew "tokei"       # fast code statistics with pretty output
 
 # CLI Utilities
 brew "bat"         # cat clone with syntax highlighting and Git integration
@@ -29,11 +30,6 @@ brew "exiftool"    # read and write EXIF metadata
 brew "imagemagick" # create, edit, compose, or convert bitmap images
 brew "libicns"     # library and tools for manipulating Mac OS icns files
 brew "yt-dlp"      # download videos from YouTube and other sites
-
-# Development Utilities
-brew "libsoup@2"   # HTTP library implementation in C
-brew "tokei"       # fast code statistics with pretty output
-brew "webkitgtk"   # GTK port of the WebKit browser engine
 
 # Shell
 brew "starship"    # minimal, blazing-fast shell prompt
