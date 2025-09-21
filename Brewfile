@@ -7,6 +7,7 @@ brew "pnpm"        # fast, disk space efficient package manager
 brew "python"      # interpreted, interactive, object-oriented programming language
 brew "rust"        # fast and memory-efficient language
 brew "tokei"       # fast code statistics with pretty output
+brew "uv"          # extremely fast Python package manager and resolver
 
 # CLI Utilities
 brew "bat"         # cat clone with syntax highlighting and Git integration
