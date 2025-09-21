@@ -46,6 +46,7 @@
   "terminal.integrated.shellIntegration.enabled": false,
   "terminal.integrated.cursorStyle": "block",
   "terminal.integrated.copyOnSelection": true,
+  "terminal.integrated.scrollback": 100000,
 
   // Language-specific settings
   "[python]": {
