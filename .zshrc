@@ -19,6 +19,11 @@ setopt SHARE_HISTORY       # share history between all terminal sessions in real
 #--- completions ---#
 autoload -Uz compinit && compinit
 
+#--- rust environment ---#
+if [[ -f "$HOME/.cargo/env" ]]; then
+    . "$HOME/.cargo/env"
+fi
+
 #--- interactive tools ---#
 if [[ -x "$HOME/.local/bin/starship" ]]; then
     eval "$($HOME/.local/bin/starship init zsh)"
