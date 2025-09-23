@@ -8,7 +8,7 @@
 
   // Editor settings
   "editor.accessibilitySupport": "off",
-  "editor.fontSize": 16,
+  "editor.fontSize": 14,
   "editor.fontLigatures": true,
   "editor.inlineSuggest.enabled": true,
   "editor.linkedEditing": true,
@@ -42,7 +42,7 @@
   // Terminal settings
   "terminal.integrated.confirmOnKill": "never",
   "terminal.integrated.defaultProfile.linux": "zsh",
-  "terminal.integrated.fontSize": 16,
+  "terminal.integrated.fontSize": 14,
   "terminal.integrated.shellIntegration.enabled": false,
   "terminal.integrated.cursorStyle": "block",
   "terminal.integrated.copyOnSelection": true,
