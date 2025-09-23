@@ -19,9 +19,9 @@ setopt SHARE_HISTORY       # share history between all terminal sessions in real
 #--- completions ---#
 autoload -Uz compinit && compinit
 
-#--- rust environment ---#
-if [[ -f "$HOME/.cargo/env" ]]; then
-    . "$HOME/.cargo/env"
+#--- rustup environment ---#
+if [[ -d "$HOME/.cargo/bin" ]]; then
+    export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
 #--- interactive tools ---#

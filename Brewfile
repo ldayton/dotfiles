@@ -5,7 +5,6 @@ brew "lazygit"     # simple terminal UI for git commands
 brew "node"        # JavaScript runtime built on V8
 brew "pnpm"        # fast, disk space efficient package manager
 brew "python"      # interpreted, interactive, object-oriented programming language
-brew "rustup"      # Rust toolchain installer and version manager
 brew "tokei"       # fast code statistics with pretty output
 brew "uv"          # extremely fast Python package manager and resolver
 
