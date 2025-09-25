@@ -66,3 +66,6 @@ bindkey "^[OF" end-of-line           # End key (alternative)
 bindkey "^[[1~" beginning-of-line    # Home key (another variant)
 bindkey "^[[4~" end-of-line          # End key (another variant)
 bindkey "^[[3~" delete-char          # Delete key
+
+#--- local configuration ---#
+[[ -f ~/.zshrc.local ]] && . ~/.zshrc.local
