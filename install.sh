@@ -56,4 +56,3 @@ fi
 
 echo ""
 echo "Dotfiles installed successfully!"
-echo ""
