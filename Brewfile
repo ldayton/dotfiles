@@ -5,6 +5,7 @@ brew "lazygit"     # simple terminal UI for git commands
 brew "node"        # JavaScript runtime built on V8
 brew "pnpm"        # fast, disk space efficient package manager
 brew "python"      # interpreted, interactive, object-oriented programming language
+cask "temurin@25"  # Eclipse Temurin OpenJDK 25
 brew "tokei"       # fast code statistics with pretty output
 brew "uv"          # extremely fast Python package manager and resolver
 brew "vite"        # next generation frontend tooling
@@ -19,6 +20,11 @@ brew "jq"          # lightweight JSON processor
 brew "tldr"        # simplified man pages with practical examples
 brew "watch"       # execute a command periodically
 brew "zoxide"      # smarter cd command that learns your habits
+
+# Cloud Tools
+brew "aws-cdk"     # AWS Cloud Development Kit for infrastructure as code
+brew "awscli"      # official AWS command-line interface
+brew "awscurl"     # curl wrapper for AWS API calls with sigv4
 
 # Network Tools
 brew "curlie"      # curl with the ease of httpie

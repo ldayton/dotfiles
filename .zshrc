@@ -24,6 +24,12 @@ if [[ -d "$HOME/.cargo/bin" ]]; then
     export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
+#--- java environment ---#
+if [[ -d "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home" ]]; then
+    export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home
+    export PATH=$JAVA_HOME/bin:$PATH
+fi
+
 #--- interactive tools ---#
 if [[ -x "$HOME/.local/bin/starship" ]]; then
     eval "$($HOME/.local/bin/starship init zsh)"
