@@ -1,0 +1,100 @@
+# Ripgrep configuration file
+# Set RIPGREP_CONFIG_PATH to point to this file
+
+# Search Settings
+# ==============
+
+# Use smart case - case-insensitive unless pattern has uppercase
+--smart-case
+
+# Search hidden files by default (respects .gitignore)
+--hidden
+
+# Follow symbolic links
+--follow
+
+# Display Settings
+# ================
+
+# Show line numbers
+--line-number
+
+# Show column numbers
+--column
+
+# Pretty output with colors even when piping
+--color=auto
+
+# Max columns before truncating long lines (with preview)
+--max-columns=150
+--max-columns-preview
+
+# Sort files by path (consistent output)
+--sort=path
+
+# Exclusions
+# ==========
+
+# Version control
+--glob=!.git/**
+
+# Dependencies & build artifacts
+--glob=!node_modules/**
+--glob=!target/**
+--glob=!dist/**
+--glob=!build/**
+--glob=!out/**
+
+# Python
+--glob=!__pycache__/**
+--glob=!*.pyc
+--glob=!.venv/**
+--glob=!venv/**
+--glob=!.pytest_cache/**
+
+# Rust
+--glob=!Cargo.lock
+
+# Java
+--glob=!*.class
+--glob=!.gradle/**
+
+# IDE & Editors
+--glob=!*.swp
+--glob=!*~
+--glob=!.DS_Store
+
+# Archives & binaries
+--glob=!*.{zip,tar,tar.gz,rar,7z}
+--glob=!*.{png,jpg,jpeg,gif,bmp,ico,webp}
+--glob=!*.{pdf,doc,docx}
+--glob=!*.{mp4,avi,mkv,mp3,wav}
+--glob=!*.{exe,dll,so,dylib}
+
+# Custom Type Definitions
+# =======================
+
+# TypeScript/JavaScript variants
+--type-add=ts:*.{ts,tsx,mts,cts}
+--type-add=js:*.{js,jsx,mjs,cjs}
+
+# Web assets
+--type-add=style:*.{css,scss,sass,less}
+--type-add=web:*.{html,htm,vue,svelte}
+
+# Config files
+--type-add=config:*.{json,jsonc,toml,yaml,yml,ini,conf}
+--type-add=env:*.{env,env.*}
+
+# Documentation
+--type-add=docs:*.{md,mdx,rst,txt}
+
+# Shell
+--type-add=shell:*.{sh,bash,zsh,fish}
+
+# Terraform/Infrastructure
+--type-add=terraform:*.{tf,tfvars}
+--type-add=hcl:*.hcl
+
+# AWS CDK (for your CDK projects)
+--type-add=cdk:cdk.{json,context.json}
