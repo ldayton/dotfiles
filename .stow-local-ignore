@@ -1,0 +1,6 @@
+# Files that shouldn't be stowed
+README.md
+Brewfile
+.gitignore
+.git
+.DS_Store
