@@ -5,7 +5,7 @@ brew "lazygit"     # simple terminal UI for git commands
 brew "node"        # JavaScript runtime built on V8
 brew "pnpm"        # fast, disk space efficient package manager
 brew "python"      # interpreted, interactive, object-oriented programming language
-cask "temurin@25"  # Eclipse Temurin OpenJDK 25
+cask "temurin"     # Eclipse Temurin OpenJDK (latest)
 brew "tokei"       # fast code statistics with pretty output
 brew "uv"          # extremely fast Python package manager and resolver
 brew "vite"        # next generation frontend tooling
