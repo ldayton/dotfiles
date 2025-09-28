@@ -17,7 +17,6 @@ brew "fd"          # simple, fast alternative to find
 brew "fzf"         # command-line fuzzy finder
 brew "ripgrep"     # ultra-fast grep with smart defaults
 brew "jq"          # lightweight JSON processor
-brew "tldr"        # simplified man pages with practical examples
 brew "watch"       # execute a command periodically
 brew "zoxide"      # smarter cd command that learns your habits
 
