@@ -11,8 +11,8 @@ brew "uv"          # extremely fast Python package manager and resolver
 brew "vite"        # next generation frontend tooling
 
 # Shell
+brew "atuin"       # magical shell history database with sync
 brew "eza"         # modern ls replacement with icons and git integration
-brew "fzf"         # command-line fuzzy finder
 brew "starship"    # minimal, blazing-fast shell prompt
 brew "zellij"      # modern terminal multiplexer written in Rust
 brew "zoxide"      # smarter cd command that learns your habits
