@@ -1,0 +1,11 @@
+# Atuin configuration
+
+# Invert the UI - put the search bar at the top (reverses display order)
+invert = true
+
+# Enable immediate command execution on Enter (Tab to edit)
+enter_accept = true
+
+# Enable sync v2
+[sync]
+records = true

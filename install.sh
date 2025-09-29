@@ -7,7 +7,6 @@ DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 
 echo "Installing dotfiles from $DOTFILES"
 
-# Function to create symlink
 link() {
     local src="$1"
     local dest="$2"
@@ -15,9 +14,18 @@ link() {
     # Create parent directory if needed
     mkdir -p "$(dirname "$dest")"
 
-    # Remove existing file/link if it exists
-    if [ -e "$dest" ] || [ -L "$dest" ]; then
-        rm -rf "$dest"
+    # Handle existing file/link if it exists
+    if [ -L "$dest" ]; then
+        # It's a symlink, safe to remove
+        unlink "$dest"
+    elif [ -f "$dest" ]; then
+        # It's a regular file, back it up first
+        echo "  Backing up existing file: $dest -> $dest.backup"
+        mv "$dest" "$dest.backup"
+    elif [ -d "$dest" ]; then
+        # It's a directory, don't remove it
+        echo "  ERROR: $dest is a directory, not replacing"
+        return 1
     fi
 
     # Create symlink
@@ -25,18 +33,24 @@ link() {
     echo "  ✓ Linked $dest"
 }
 
-# Basic dotfiles
-link "$DOTFILES/git/gitconfig" "$HOME/.gitconfig"
 link "$DOTFILES/zsh/zshrc" "$HOME/.zshrc"
-link "$DOTFILES/ripgrep/ripgreprc" "$HOME/.ripgreprc"
 
-# Claude config
+if [ -f "$DOTFILES/git/gitconfig" ]; then
+    link "$DOTFILES/git/gitconfig" "$HOME/.gitconfig"
+fi
+if [ -f "$DOTFILES/ripgrep/ripgreprc" ]; then
+    link "$DOTFILES/ripgrep/ripgreprc" "$HOME/.ripgreprc"
+fi
+
+if [ -f "$DOTFILES/atuin/config.toml" ]; then
+    link "$DOTFILES/atuin/config.toml" "$HOME/.config/atuin/config.toml"
+fi
+
 if [ -f "$DOTFILES/claude/settings.json" ]; then
     mkdir -p "$HOME/.claude"
     link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.local.json"
 fi
 
-# VS Code
 if [ -f "$DOTFILES/vscode/settings.json" ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
         VSCODE_DIR="$HOME/Library/Application Support/Code/User"
@@ -46,7 +60,6 @@ if [ -f "$DOTFILES/vscode/settings.json" ]; then
     link "$DOTFILES/vscode/settings.json" "$VSCODE_DIR/settings.json"
 fi
 
-# Zed config (same path for macOS and Linux)
 if [ -f "$DOTFILES/zed/settings.json" ]; then
     link "$DOTFILES/zed/settings.json" "$HOME/.config/zed/settings.json"
 fi
