@@ -15,13 +15,18 @@ setopt EXTENDED_HISTORY    # save timestamp and duration with each command
 setopt HIST_IGNORE_DUPS    # don't save command if it's same as the previous one
 setopt HIST_IGNORE_SPACE   # don't save commands that start with a space
 setopt SHARE_HISTORY       # share history between all terminal sessions in real-time
+setopt NO_BEEP             # disable terminal beep sound
 
 #--- completions ---#
 autoload -Uz compinit && compinit
 
 #--- rustup environment ---#
-if [[ -d "$HOME/.cargo/bin" ]]; then
-    export PATH="$HOME/.cargo/bin:$PATH"
+if command -v rustup &> /dev/null; then
+    rustup_prefix="$(brew --prefix rustup 2>/dev/null)"
+    if [[ -n "$rustup_prefix" && -d "$rustup_prefix/bin" ]]; then
+        export PATH="$rustup_prefix/bin:$PATH"
+    fi
+    unset rustup_prefix
 fi
 
 #--- java environment ---#
