@@ -27,9 +27,11 @@ brew "jq"          # lightweight JSON processor
 brew "watch"       # execute a command periodically
 
 # Cloud Tools
-brew "aws-cdk"     # AWS Cloud Development Kit for infrastructure as code
-brew "awscli"      # official AWS command-line interface
-brew "awscurl"     # curl wrapper for AWS API calls with sigv4
+brew "aws-cdk"                # AWS Cloud Development Kit for infrastructure as code
+brew "awscli"                 # official AWS command-line interface
+brew "awscurl"                # curl wrapper for AWS API calls with sigv4
+cask "session-manager-plugin" # AWS Systems Manager Session Manager plugin
+
 
 # Network Tools
 brew "curlie"      # curl with the ease of httpie
