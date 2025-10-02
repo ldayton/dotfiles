@@ -3,6 +3,12 @@
 # Invert the UI - put the search bar at the top (reverses display order)
 invert = true
 
+# Display style - "auto" (default), "full" (fullscreen), or "compact" (inline)
+style = "compact"
+
+# Maximum number of lines for the interface (0 = full screen)
+inline_height = 20
+
 # Enable immediate command execution on Enter (Tab to edit)
 enter_accept = false
 

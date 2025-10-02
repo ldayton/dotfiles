@@ -35,7 +35,7 @@ link() {
 
 link "$DOTFILES/zsh/zshrc" "$HOME/.zshrc"
 
-if [ -f "$DOTFILES/git/gitconfig" ]; then
+if [ -f "$DOTFILES/git/gitconfig" ] && [ "$USER" = "lily" ]; then
     link "$DOTFILES/git/gitconfig" "$HOME/.gitconfig"
 fi
 if [ -f "$DOTFILES/ripgrep/ripgreprc" ]; then
@@ -48,7 +48,7 @@ fi
 
 if [ -f "$DOTFILES/claude/settings.json" ]; then
     mkdir -p "$HOME/.claude"
-    link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.local.json"
+    link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
 fi
 
 if [ -f "$DOTFILES/vscode/settings.json" ]; then

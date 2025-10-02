@@ -1,8 +1,41 @@
 {
   "model": "opus",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Task",
+      "Glob",
+      "Grep",
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Bash(cd:*)",
+      "Bash(echo:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(which:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(tree:*)",
+      "Bash(mkdir:*)",
+      "Bash(ps:*)",
+      "Bash(ss:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.astral.sh)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developer.hashicorp.com)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Read(.env)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)"
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "npx -y ccstatusline@latest",
     "padding": 0
-  }
+  },
+  "diffMode": "cli"
 }
