@@ -30,6 +30,7 @@ brew "watch"       # execute a command periodically
 brew "aws-cdk"                # AWS Cloud Development Kit for infrastructure as code
 brew "awscli"                 # official AWS command-line interface
 brew "awscurl"                # curl wrapper for AWS API calls with sigv4
+brew "awslogs"                # query and stream CloudWatch logs
 cask "session-manager-plugin" # AWS Systems Manager Session Manager plugin
 
 
