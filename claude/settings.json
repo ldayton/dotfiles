@@ -118,6 +118,7 @@
       "WebFetch(domain:developer.hashicorp.com)",
       "WebFetch(domain:docs.astral.sh)",
       "WebFetch(domain:github.com)",
+      "WebFetch(domain:stackoverflow.com)",
       "WebSearch"
     ],
     "deny": [
