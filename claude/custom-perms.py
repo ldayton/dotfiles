@@ -42,6 +42,11 @@ CONFIGS = {
         "safe_prefixes": (),
         "parser": "first_token",  # git <command> [args]
     },
+    "kubectl": {
+        "safe_actions": {"api-resources", "api-versions", "cluster-info", "describe", "explain", "get", "logs", "top", "version"},
+        "safe_prefixes": (),
+        "parser": "first_token",  # kubectl <command> [args]
+    },
 }
 
 
