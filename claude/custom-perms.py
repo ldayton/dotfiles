@@ -1,9 +1,23 @@
 #!/usr/bin/env python3
-"""Hook to auto-approve read-only cloud CLI commands."""
+"""Hook to auto-approve read-only CLI commands."""
 
 import json
 import re
 import sys
+
+
+def check_find(command, tokens):
+    """Approve find if no -exec/-execdir/-ok/-okdir/-delete."""
+    dangerous = {"-exec", "-execdir", "-ok", "-okdir", "-delete"}
+    if dangerous & set(tokens):
+        return None  # defer
+    return {"decision": "approve", "reason": "safe: find (no exec)"}
+
+
+# Custom checkers for commands that don't fit the standard pattern
+CUSTOM_CHECKS = {
+    "find": check_find,
+}
 
 # Per-CLI configuration
 CONFIGS = {
@@ -97,6 +111,14 @@ def main():
         sys.exit(0)
 
     cli = tokens[0]
+
+    # Check custom handlers first
+    if cli in CUSTOM_CHECKS:
+        result = CUSTOM_CHECKS[cli](command, tokens)
+        if result:
+            print(json.dumps(result))
+        sys.exit(0)
+
     if cli not in CONFIGS:
         sys.exit(0)
 
