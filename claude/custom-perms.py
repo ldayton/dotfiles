@@ -14,9 +14,17 @@ def check_find(command, tokens):
     return {"decision": "approve", "reason": "safe: find (no exec)"}
 
 
+def check_sort(command, tokens):
+    """Approve sort if no -o (output file)."""
+    if "-o" in tokens or any(t.startswith("-o") for t in tokens):
+        return None  # defer
+    return {"decision": "approve", "reason": "safe: sort (no -o)"}
+
+
 # Custom checkers for commands that don't fit the standard pattern
 CUSTOM_CHECKS = {
     "find": check_find,
+    "sort": check_sort,
 }
 
 # Per-CLI configuration
