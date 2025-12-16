@@ -90,6 +90,33 @@ TESTS = [
     # Variable assignment prefix
     ("FOO=BAR ls -l", True),
     ("FOO=BAR rm file", False),
+
+    # Prefix commands
+    ("git config --get user.name", True),
+    ("git config --list", True),
+    ("git stash list", True),
+    ("node --version", True),
+    ("python --version", True),
+    ("pre-commit", True),
+    ("pre-commit run", True),
+    ("pre-commit run --all-files", True),
+
+    # Prefix commands - unsafe variants
+    ("git config user.name foo", False),
+    ("git config --unset user.name", False),
+    ("git stash pop", False),
+    ("git stash drop", False),
+    ("node script.js", False),
+    ("python script.py", False),
+
+    # Prefix commands in pipelines
+    ("git config --get user.name | cat", True),
+    ("node --version && ls", True),
+    ("python --version | grep 3", True),
+
+    # Prefix commands - partial token matches should NOT match
+    ("python --version-info", False),
+    ("pre-commit-hook", False),
 ]
 
 

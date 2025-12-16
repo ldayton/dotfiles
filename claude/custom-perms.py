@@ -21,6 +21,16 @@ SAFE_COMMANDS = {
     "uptime", "wc", "which", "whoami",
 }
 
+# Commands that are safe when they start with specific token sequences
+PREFIX_COMMANDS = {
+    "git config --get",
+    "git config --list",
+    "git stash list",
+    "node --version",
+    "python --version",
+    "pre-commit",
+}
+
 # Wrapper commands that just modify how the inner command runs
 WRAPPERS = {
     "time": 0,      # time <cmd>
@@ -166,6 +176,12 @@ def is_command_safe(tokens):
     # Check simple safe commands
     if cmd in SAFE_COMMANDS:
         return True
+
+    # Check prefix commands
+    for prefix in PREFIX_COMMANDS:
+        prefix_tokens = prefix.split()
+        if tokens[:len(prefix_tokens)] == prefix_tokens:
+            return True
 
     # Check custom handlers
     if cmd in CUSTOM_CHECKS:

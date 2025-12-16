@@ -19,12 +19,6 @@
   },
   "permissions": {
     "allow": [
-      "Bash(git config --get:*)",
-      "Bash(git config --list:*)",
-      "Bash(git stash list:*)",
-      "Bash(node --version:*)",
-      "Bash(pre-commit:*)",
-      "Bash(python --version:*)",
       "Glob",
       "Grep",
       "Read(//**)",
