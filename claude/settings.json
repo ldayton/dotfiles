@@ -23,15 +23,7 @@
       "Grep",
       "Read(//**)",
       "Task",
-      "WebFetch(domain:developer.hashicorp.com)",
-      "WebFetch(domain:docs.astral.sh)",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:stackoverflow.com)",
-      "WebFetch(domain:discuss.hashicorp.com)",
-      "WebFetch(domain:medium.com)",
-      "WebFetch(domain:aws.amazon.com)",
-      "WebFetch(domain:bugs.python.org)",
-      "WebFetch(domain:boto3.amazonaws.com)",
+      "WebFetch",
       "WebSearch"
     ],
     "deny": [
