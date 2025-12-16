@@ -63,6 +63,14 @@ CONFIGS = {
     },
 }
 
+# Aliases that share config with another CLI
+ALIASES = {
+    "kubeat": "kubectl",
+    "kubeci": "kubectl",
+    "kubeci2": "kubectl",
+    "kubelab": "kubectl",
+}
+
 
 def parse_aws(tokens):
     """Parse: aws <service> <action> → return (service, action)"""
@@ -118,6 +126,9 @@ def main():
         if result:
             print(json.dumps(result))
         sys.exit(0)
+
+    # Resolve aliases
+    cli = ALIASES.get(cli, cli)
 
     if cli not in CONFIGS:
         sys.exit(0)
