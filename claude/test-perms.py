@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Test cases for custom-perms.py"""
+"""Test cases for custom-perms-v2.py"""
 
 import json
 import subprocess
 import sys
 
 # (command, expected_approved_by_hook)
-# Note: simple commands like ls, grep, cat are handled by settings.json, not the hook
 TESTS = [
     # CLI tools - safe
     ("aws s3 ls", True),
@@ -22,6 +21,10 @@ TESTS = [
     ("aws s3 rm s3://bucket/key", False),
     ("aws ec2 terminate-instances --instance-ids i-123", False),
     ("git push", False),
+    ("git branch -D feature", False),
+    ("git stash drop", False),
+    ("git config --unset user.name", False),
+    ("git tag -d v1.0", False),
     ("kubectl delete pod foo", False),
     ("gh pr create", False),
     ("docker run ubuntu", False),
@@ -34,15 +37,55 @@ TESTS = [
     ("sort file.txt", True),
     ("sort -o output.txt file.txt", False),
 
-    # Chained commands (should defer)
-    ("ls && rm -rf /", False),
-    ("cat file || echo foo", False),
-    ("ls; whoami", False),
-    ("cat file | grep foo", False),
+    # Chained commands - should check ALL commands
+    ("aws s3 ls && aws s3 ls", True),  # both safe
+    ("aws s3 ls && aws s3 rm foo", False),  # second unsafe
+    ("aws s3 rm foo && aws s3 ls", False),  # first unsafe
+    ("git status || git push", False),  # second unsafe
 
-    # Wrappers (currently not handled - should defer)
-    ("time ls", False),
-    ("nice grep foo", False),
+    # Pipes - should check ALL commands
+    ("git log | grep foo", True),  # both safe (grep handled separately?)
+    ("docker ps | grep foo", True),
+
+    # Wrappers - should unwrap and check inner command
+    ("time git status", True),
+    ("time aws s3 ls", True),
+    ("time aws s3 rm foo", False),
+    ("nice git log", True),
+    ("nice -n 10 git status", True),
+    ("timeout 5 kubectl get pods", True),
+
+    # Nested wrappers
+    ("time nice git status", True),
+
+    # Complex chains with wrappers
+    ("time git status && git log", True),
+    ("time git status && git push", False),
+
+    # Simple commands (now handled by hook too)
+    ("ls", True),
+    ("ls -la", True),
+    ("grep foo bar.txt", True),
+    ("cat file.txt", True),
+
+    # Simple commands chained
+    ("ls && cat foo", True),
+    ("ls && rm foo", False),
+
+    # Output redirects - should defer (write to files)
+    ("ls > file.txt", False),
+    ("cat foo >> bar.txt", False),
+    ("ls 2> err.txt", False),
+    ("cmd &> all.txt", False),
+    ("git log > changes.txt", False),
+
+    # Input redirects - safe (read only)
+    ("cat < input.txt", True),
+    ("grep foo < file.txt", True),
+
+    # Mixed chains with redirects
+    ("ls && cat foo > out.txt", False),
+    ("cat < in.txt && ls", True),
 ]
 
 
@@ -51,7 +94,7 @@ def test_command(cmd, expected_safe):
     input_data = json.dumps({"tool_input": {"command": cmd}})
 
     result = subprocess.run(
-        ["python3", "custom-perms.py"],
+        ["uv", "run", "custom-perms.py"],
         input=input_data,
         capture_output=True,
         text=True,
