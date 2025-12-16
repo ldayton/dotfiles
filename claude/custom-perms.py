@@ -37,6 +37,11 @@ CONFIGS = {
         "safe_prefixes": (),
         "parser": "first_token",  # brew <command> [args]
     },
+    "git": {
+        "safe_actions": {"blame", "branch", "cat-file", "check-ignore", "cherry", "describe", "diff", "fetch", "for-each-ref", "grep", "log", "ls-files", "ls-tree", "merge-base", "name-rev", "reflog", "rev-list", "rev-parse", "shortlog", "show", "status", "tag"},
+        "safe_prefixes": (),
+        "parser": "first_token",  # git <command> [args]
+    },
 }
 
 
