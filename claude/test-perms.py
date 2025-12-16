@@ -86,6 +86,10 @@ TESTS = [
     # Mixed chains with redirects
     ("ls && cat foo > out.txt", False),
     ("cat < in.txt && ls", True),
+
+    # Variable assignment prefix
+    ("FOO=BAR ls -l", True),
+    ("FOO=BAR rm file", False),
 ]
 
 
