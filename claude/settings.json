@@ -9,7 +9,7 @@
       {
         "hooks": [
           {
-            "command": "python3 $HOME/source/dotfiles/claude/custom-perms.py",
+            "command": "uv run $HOME/source/dotfiles/claude/custom-perms-v2.py",
             "type": "command"
           }
         ],
