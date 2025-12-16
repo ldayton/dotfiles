@@ -22,6 +22,11 @@ CONFIGS = {
         "safe_prefixes": ("get-", "list-"),
         "parser": "last_token",  # gcloud <group> [subgroup...] <action>
     },
+    "gh": {
+        "safe_actions": {"checks", "diff", "list", "search", "status", "view"},
+        "safe_prefixes": (),
+        "parser": "last_token",  # gh <group> <action>
+    },
 }
 
 
