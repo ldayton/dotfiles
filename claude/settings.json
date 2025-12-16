@@ -1,7 +1,21 @@
 {
+  "alwaysThinkingEnabled": false,
   "attribution": {
     "commit": "",
     "pr": ""
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "python3 $HOME/source/dotfiles/claude/custom-perms.py",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      }
+    ]
   },
   "permissions": {
     "allow": [
@@ -74,22 +88,8 @@
     ]
   },
   "statusLine": {
-    "type": "command",
     "command": "npx -y ccstatusline@latest",
-    "padding": 0
-  },
-  "alwaysThinkingEnabled": false,
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 $HOME/source/dotfiles/claude/custom-perms.py"
-          }
-        ]
-      }
-    ]
+    "padding": 0,
+    "type": "command"
   }
 }
