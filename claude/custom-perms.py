@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Hook to auto-approve read-only cloud CLI commands."""
+
+import json
+import re
+import sys
+
+# Per-CLI configuration
+CONFIGS = {
+    "aws": {
+        "safe_actions": {"ls"},
+        "safe_prefixes": ("describe-", "get-", "head-", "list-"),
+        "parser": "aws",  # aws <service> <action>
+    },
+    "az": {
+        "safe_actions": {"list", "show"},
+        "safe_prefixes": ("get-", "list-"),
+        "parser": "last_token",  # az <group> [subgroup...] <action>
+    },
+    "gcloud": {
+        "safe_actions": {"list", "describe"},
+        "safe_prefixes": ("get-", "list-"),
+        "parser": "last_token",  # gcloud <group> [subgroup...] <action>
+    },
+}
+
+
+def parse_aws(tokens):
+    """Parse: aws <service> <action> → return (service, action)"""
+    if len(tokens) < 2:
+        return None, None
+    match = re.match(r"^[\w-]+$", tokens[0]) and re.match(r"^[\w-]+$", tokens[1])
+    if match:
+        return tokens[0], tokens[1]
+    return None, None
+
+
+def parse_last_token(tokens):
+    """Parse: <cli> <group> [subgroup...] <action> → return action (last non-flag token)"""
+    action = None
+    for token in tokens:
+        if token.startswith("-"):
+            break
+        action = token
+    return None, action
+
+
+PARSERS = {
+    "aws": parse_aws,
+    "last_token": parse_last_token,
+}
+
+
+def main():
+    input_data = json.load(sys.stdin)
+    command = input_data.get("tool_input", {}).get("command", "")
+
+    # Reject chained commands - defer to default permissions
+    if any(op in command for op in ("&&", "||", ";", "|")):
+        sys.exit(0)
+
+    tokens = command.split()
+    if not tokens:
+        sys.exit(0)
+
+    cli = tokens[0]
+    if cli not in CONFIGS:
+        sys.exit(0)
+
+    config = CONFIGS[cli]
+    parser = PARSERS[config["parser"]]
+    service, action = parser(tokens[1:])
+
+    if not action:
+        sys.exit(0)
+
+    # Check safe actions
+    if action in config["safe_actions"]:
+        print(json.dumps({"decision": "approve", "reason": f"safe: {action}"}))
+        sys.exit(0)
+
+    # Check safe prefixes
+    if action.startswith(config["safe_prefixes"]):
+        print(json.dumps({"decision": "approve", "reason": f"safe: {action}"}))
+        sys.exit(0)
+
+    # Unknown or dangerous - defer
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

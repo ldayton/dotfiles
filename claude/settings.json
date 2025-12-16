@@ -6,8 +6,6 @@
   "permissions": {
     "allow": [
       "Bash(ack:*)",
-      "Bash(az group show:*)",
-      "Bash(az resource list:*)",
       "Bash(brew info:*)",
       "Bash(brew list:*)",
       "Bash(cat:*)",
@@ -24,7 +22,6 @@
       "Bash(env:*)",
       "Bash(file:*)",
       "Bash(find:*)",
-      "Bash(gcloud compute instances list:*)",
       "Bash(gh gist list:*)",
       "Bash(gh gist view:*)",
       "Bash(gh issue list:*)",
@@ -129,7 +126,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/source/dotfiles/claude/aws-perms.py"
+            "command": "python3 $HOME/source/dotfiles/claude/custom-perms.py"
           }
         ]
       }
