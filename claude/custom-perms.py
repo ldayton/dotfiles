@@ -27,6 +27,11 @@ CONFIGS = {
         "safe_prefixes": (),
         "parser": "last_token",  # gh <group> <action>
     },
+    "docker": {
+        "safe_actions": {"diff", "events", "history", "images", "inspect", "logs", "port", "ps", "stats", "top"},
+        "safe_prefixes": (),
+        "parser": "first_token",  # docker <command> [args]
+    },
 }
 
 
@@ -50,8 +55,16 @@ def parse_last_token(tokens):
     return None, action
 
 
+def parse_first_token(tokens):
+    """Parse: <cli> <command> [args] → return action (first non-flag token)"""
+    if not tokens or tokens[0].startswith("-"):
+        return None, None
+    return None, tokens[0]
+
+
 PARSERS = {
     "aws": parse_aws,
+    "first_token": parse_first_token,
     "last_token": parse_last_token,
 }
 
