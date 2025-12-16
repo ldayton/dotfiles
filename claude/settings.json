@@ -6,8 +6,6 @@
   "permissions": {
     "allow": [
       "Bash(ack:*)",
-      "Bash(brew info:*)",
-      "Bash(brew list:*)",
       "Bash(cat:*)",
       "Bash(cd:*)",
       "Bash(date:*)",

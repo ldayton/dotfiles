@@ -32,6 +32,11 @@ CONFIGS = {
         "safe_prefixes": (),
         "parser": "first_token",  # docker <command> [args]
     },
+    "brew": {
+        "safe_actions": {"config", "deps", "desc", "doctor", "info", "leaves", "list", "options", "outdated", "search", "uses"},
+        "safe_prefixes": (),
+        "parser": "first_token",  # brew <command> [args]
+    },
 }
 
 
