@@ -215,6 +215,7 @@ TESTS = [
     ("ip addr add 192.168.1.1/24 dev eth0", False),
     ("ip link set eth0 up", False),
     ("ip route del default", False),
+    ("ip netns exec myns ip addr", False),  # runs commands in namespace
     ("ifconfig", True),
     ("ifconfig eth0", True),
     ("ifconfig eth0 up", False),

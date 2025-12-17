@@ -162,11 +162,11 @@ def check_ip(tokens):
         break
     if not obj:
         return False
-    safe_objects = {"addr", "address", "link", "route", "neigh", "neighbor", "rule", "maddr", "mroute", "tunnel", "netns"}
+    safe_objects = {"addr", "address", "link", "route", "neigh", "neighbor", "rule", "maddr", "mroute", "tunnel"}
     if obj not in safe_objects:
         return False
     # Block modifying commands
-    dangerous = {"add", "del", "delete", "change", "replace", "set", "flush"}
+    dangerous = {"add", "del", "delete", "change", "replace", "set", "flush", "exec"}
     if dangerous & set(tokens):
         return False
     return True
