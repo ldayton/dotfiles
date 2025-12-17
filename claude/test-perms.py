@@ -167,6 +167,17 @@ TESTS = [
     ("git -C /tmp push --force", False),
     ("git --git-dir=/some/.git status", True),
     ("git -c core.editor=vim log", True),
+
+    # Gcloud with --flag value patterns
+    ("gcloud compute instances list", True),
+    ("gcloud compute instances list --project foo", True),
+    ("gcloud compute backend-services describe k8s-be --global --project foo", True),
+    ("gcloud iap settings get --project foo --resource-type=compute", True),
+    ("gcloud auth list", True),
+    ("gcloud compute instances delete foo", False),
+    ("gcloud compute instances delete list", False),  # deleting instance named "list"
+    ("gcloud compute instances create foo", False),
+    ("gcloud container clusters get-credentials foo", True),  # get- prefix
 ]
 
 
