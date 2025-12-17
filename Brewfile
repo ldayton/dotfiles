@@ -37,6 +37,7 @@ brew "terraform"              # infrastructure as code tool for cloud provisioni
 
 
 # Network Tools
+brew "bind"        # includes dig, nslookup, and other DNS utilities
 brew "curlie"      # curl with the ease of httpie
 brew "doggo"       # command-line DNS client like dig
 brew "wget"        # retrieve files from the web
