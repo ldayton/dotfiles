@@ -59,7 +59,7 @@ CLI_CONFIGS = {
     "gh": {
         "safe_actions": {"checks", "diff", "list", "search", "status", "view"},
         "safe_prefixes": (),
-        "parser": "last_token",
+        "parser": "second_token",
     },
     "docker": {
         "safe_actions": {"diff", "events", "history", "images", "inspect", "logs", "port", "ps", "stats", "top"},
@@ -149,6 +149,10 @@ def get_cli_action(tokens, parser):
         # git <action>, docker <action>
         if tokens:
             return tokens[0]
+    elif parser == "second_token":
+        # gh <resource> <action>
+        if len(tokens) >= 2:
+            return tokens[1]
     elif parser == "last_token":
         # az <group> [subgroup...] <action>
         action = None

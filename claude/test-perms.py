@@ -4,6 +4,7 @@
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 # (command, expected_approved_by_hook)
 TESTS = [
@@ -14,6 +15,7 @@ TESTS = [
     ("git log", True),
     ("kubectl get pods", True),
     ("gh pr list", True),
+    ("gh pr view 123 --repo foo/bar", True),
     ("docker ps", True),
     ("brew list", True),
 
@@ -129,7 +131,7 @@ def test_command(cmd, expected_safe):
         input=input_data,
         capture_output=True,
         text=True,
-        cwd="/Users/lily/source/dotfiles/claude",
+        cwd=Path(__file__).parent,
     )
 
     # If output contains "approve", it's safe
