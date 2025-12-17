@@ -268,7 +268,6 @@ TESTS = [
     ("dmesg --clear", False),
     ("ping google.com", True),
     ("ping -c 4 google.com", True),
-    ("ping -f google.com", False),
 ]
 
 

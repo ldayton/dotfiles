@@ -23,7 +23,7 @@ SAFE_COMMANDS = {
     "cut", "date", "df", "diff", "dig", "dir", "dirname", "du", "echo",
     "env", "false", "fd", "file", "free", "getent", "grep", "groups", "head", "host",
     "hostid", "hostname", "id", "join", "jq", "logname", "ls", "lsof",
-    "mkdir", "netstat", "nproc", "nslookup", "paste", "pinky", "printenv",
+    "mkdir", "netstat", "nproc", "nslookup", "paste", "ping", "pinky", "printenv",
     "printf", "ps", "pwd", "readlink", "realpath", "rg", "sleep", "ss",
     "stat", "tail", "test-perms.py", "traceroute", "tr", "tree", "true",
     "tsort", "tty", "type", "uname", "uniq", "uptime", "users", "vdir",
@@ -212,13 +212,6 @@ def check_openssl(tokens: list[str]) -> bool:
     return False
 
 
-def check_ping(tokens: list[str]) -> bool:
-    """Approve ping if no flood flag."""
-    if "-f" in tokens:
-        return False
-    return True
-
-
 def check_sed(tokens: list[str]) -> bool:
     """Approve sed if no -i flag (in-place editing)."""
     for t in tokens:
@@ -242,7 +235,6 @@ CUSTOM_CHECKS: dict[str, Callable[[list[str]], bool]] = {
     "ip": check_ip,
     "journalctl": check_journalctl,
     "openssl": check_openssl,
-    "ping": check_ping,
     "sed": check_sed,
     "sort": check_sort,
 }
