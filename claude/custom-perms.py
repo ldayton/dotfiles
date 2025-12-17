@@ -45,7 +45,23 @@ WRAPPERS = {
     "uv": (["uv", "run"], None),
 }
 
+# Known unsafe actions for CLIs using "scan" parser
+UNSAFE_ACTIONS = {
+    "create", "delete", "update", "set", "remove", "add", "import", "patch",
+    "start", "stop", "reset", "restart", "ssh", "scp", "deploy", "rollback",
+    "invoke", "attach", "detach", "deallocate", "redeploy",
+    "set-iam-policy", "add-iam-policy-binding", "remove-iam-policy-binding",
+    "activate-service-account", "revoke", "login", "apply", "edit", "replace",
+    "run", "exec", "scale", "cordon", "uncordon", "drain", "taint", "label",
+    "annotate", "patch", "rollout",
+}
+
 # CLI tools with action-based checks
+# parser types:
+#   "aws": action is second token (aws <service> <action>)
+#   "first_token": action is first non-flag token
+#   "second_token": action is second non-flag token
+#   "scan": scan first 4 non-flag tokens for safe/unsafe action
 CLI_CONFIGS = {
     "aws": {
         "safe_actions": {"ls", "tail"},
@@ -53,14 +69,14 @@ CLI_CONFIGS = {
         "parser": "aws",
     },
     "az": {
-        "safe_actions": {"list", "show"},
+        "safe_actions": {"list", "show", "get", "export"},
         "safe_prefixes": ("get-", "list-"),
-        "parser": "last_token",
+        "parser": "scan",
     },
     "gcloud": {
-        "safe_actions": {"list", "describe"},
-        "safe_prefixes": ("get-", "list-"),
-        "parser": "last_token",
+        "safe_actions": {"list", "describe", "get", "get-iam-policy", "export"},
+        "safe_prefixes": ("get-", "list-", "describe-"),
+        "parser": "scan",
     },
     "gh": {
         "safe_actions": {"checks", "diff", "list", "search", "status", "view"},
@@ -85,7 +101,7 @@ CLI_CONFIGS = {
     "kubectl": {
         "safe_actions": {"api-resources", "api-versions", "cluster-info", "describe", "explain", "get", "logs", "top", "version"},
         "safe_prefixes": (),
-        "parser": "first_token",
+        "parser": "scan",
     },
     "cdk": {
         "safe_actions": {"diff", "doctor", "docs", "list", "ls", "metadata", "notices", "synth"},
@@ -159,61 +175,9 @@ def check_git(tokens):
     return action in config["safe_actions"]
 
 
-AZ_SAFE_ACTIONS = {"list", "show", "get", "export"}
-AZ_UNSAFE_ACTIONS = {
-    "create", "delete", "update", "set", "remove", "add", "import", "start",
-    "stop", "restart", "deallocate", "redeploy", "attach", "detach", "invoke",
-}
-
-
-def check_az(tokens):
-    """Approve az if a safe action is found in the first few tokens."""
-    args = tokens[1:]
-    non_flag_count = 0
-    for token in args:
-        if token.startswith("-"):
-            continue
-        non_flag_count += 1
-        if non_flag_count > 4:
-            return False
-        if token in AZ_SAFE_ACTIONS or token.startswith(("get-", "list-")):
-            return True
-        if token in AZ_UNSAFE_ACTIONS:
-            return False
-    return False
-
-
-GCLOUD_SAFE_ACTIONS = {"describe", "list", "get", "get-iam-policy", "export"}
-GCLOUD_UNSAFE_ACTIONS = {
-    "create", "delete", "update", "set", "remove", "add", "import", "patch",
-    "start", "stop", "reset", "restart", "ssh", "scp", "deploy", "rollback",
-    "set-iam-policy", "add-iam-policy-binding", "remove-iam-policy-binding",
-    "activate-service-account", "revoke", "login",
-}
-
-
-def check_gcloud(tokens):
-    """Approve gcloud if a safe action is found in the first few tokens."""
-    args = tokens[1:]
-    non_flag_count = 0
-    for token in args:
-        if token.startswith("-"):
-            continue
-        non_flag_count += 1
-        if non_flag_count > 4:
-            return False
-        if token in GCLOUD_SAFE_ACTIONS or token.startswith(("get-", "list-", "describe-")):
-            return True
-        if token in GCLOUD_UNSAFE_ACTIONS:
-            return False
-    return False
-
-
 CUSTOM_CHECKS = {
     "awk": check_awk,
-    "az": check_az,
     "find": check_find,
-    "gcloud": check_gcloud,
     "git": check_git,
     "sed": check_sed,
     "sort": check_sort,
@@ -250,28 +214,38 @@ def strip_wrappers(tokens):
     return tokens
 
 
-def get_cli_action(tokens, parser):
+def get_cli_action(tokens, parser, config=None):
     """Extract action from CLI command based on parser type."""
     if parser == "aws":
         # aws <service> <action>
         if len(tokens) >= 2:
             return tokens[1]
     elif parser == "first_token":
-        # git <action>, docker <action>
+        # docker <action>, brew <action>
         if tokens:
             return tokens[0]
     elif parser == "second_token":
         # gh <resource> <action>
         if len(tokens) >= 2:
             return tokens[1]
-    elif parser == "last_token":
-        # az <group> [subgroup...] <action>
-        action = None
+    elif parser == "scan":
+        # Scan first 4 non-flag tokens for a known action
+        safe_actions = config["safe_actions"] if config else set()
+        safe_prefixes = config["safe_prefixes"] if config else ()
+        non_flag_count = 0
         for token in tokens:
             if token.startswith("-"):
-                break
-            action = token
-        return action
+                continue
+            non_flag_count += 1
+            if non_flag_count > 4:
+                return None
+            if token in safe_actions:
+                return token
+            if safe_prefixes and token.startswith(safe_prefixes):
+                return token
+            if token in UNSAFE_ACTIONS:
+                return token
+        return None
     return None
 
 
@@ -308,17 +282,13 @@ def is_command_safe(tokens):
     # Check CLI configs
     if cmd in CLI_CONFIGS:
         config = CLI_CONFIGS[cmd]
-        action = get_cli_action(args, config["parser"])
-
+        action = get_cli_action(args, config["parser"], config)
         if not action:
             return False
-
         if action in config["safe_actions"]:
             return True
-
         if config["safe_prefixes"] and action.startswith(config["safe_prefixes"]):
             return True
-
     return False
 
 

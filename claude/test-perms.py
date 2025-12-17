@@ -188,6 +188,15 @@ TESTS = [
     ("az vm delete list", False),  # deleting vm named "list"
     ("az vm create myvm --resource-group mygroup", False),
     ("az vm start myvm", False),
+
+    # Kubectl with flags before action
+    ("kubectl --context=foo get pods", True),
+    ("kubectl --context=foo get managedcertificate ci-api -o jsonpath='{}'", True),
+    ("kubectl -n kube-system describe pod foo", True),
+    ("kubectl delete pod foo", False),
+    ("kubectl --context=foo delete pod list", False),  # deleting pod named "list"
+    ("kubectl apply -f foo.yaml", False),
+    ("kubectl exec -it foo -- bash", False),
 ]
 
 
