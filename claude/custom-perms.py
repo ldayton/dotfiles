@@ -214,12 +214,19 @@ def is_command_safe(tokens):
 # Output redirect types that write to files
 OUTPUT_REDIRECTS = {">", ">>", "&>", ">&"}
 
+# Safe redirect destinations
+SAFE_REDIRECT_TARGETS = {"/dev/null"}
 
-def has_output_redirect(node):
-    """Check if a command node has any output redirects."""
+
+def has_unsafe_output_redirect(node):
+    """Check if a command node has any unsafe output redirects."""
     if node.kind == "command":
         for part in node.parts:
             if part.kind == "redirect" and part.type in OUTPUT_REDIRECTS:
+                # Check if redirecting to a safe target
+                target = getattr(part.output, "word", None) if hasattr(part, "output") else None
+                if target in SAFE_REDIRECT_TARGETS:
+                    continue
                 return True
     return False
 
@@ -233,8 +240,8 @@ def get_command_nodes(node):
     commands = []
 
     if node.kind == "command":
-        # Check for output redirects first
-        if has_output_redirect(node):
+        # Check for unsafe output redirects first
+        if has_unsafe_output_redirect(node):
             return None
         parts = [p.word for p in node.parts if p.kind == "word"]
         if parts:

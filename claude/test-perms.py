@@ -81,6 +81,12 @@ TESTS = [
     ("cmd &> all.txt", False),
     ("git log > changes.txt", False),
 
+    # Safe redirects to /dev/null
+    ("grep foo bar 2>/dev/null", True),
+    ("ls 2>/dev/null", True),
+    ("ls &>/dev/null", True),
+    ("grep -r pattern /dir 2>/dev/null | head -10", True),
+
     # Input redirects - safe (read only)
     ("cat < input.txt", True),
     ("grep foo < file.txt", True),
