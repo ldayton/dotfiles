@@ -19,8 +19,8 @@ SAFE_COMMANDS = {
     "du", "echo", "env", "false", "fd", "file", "free", "grep", "groups",
     "head", "host", "hostname", "id", "jq", "ls", "lsof", "mkdir",
     "netstat", "nslookup", "printenv", "ps", "pwd", "readlink", "realpath",
-    "rg", "ss", "stat", "tail", "test-perms.py", "traceroute", "tr",
-    "tree", "true", "type", "uname", "uniq", "uptime", "wc", "which",
+    "rg", "sleep", "ss", "stat", "tail", "test-perms.py", "traceroute",
+    "tr", "tree", "true", "type", "uname", "uniq", "uptime", "wc", "which",
     "whoami",
 }
 
