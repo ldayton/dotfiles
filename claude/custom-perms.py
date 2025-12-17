@@ -1,3 +1,4 @@
+#!/usr/bin/env -S uv run
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
@@ -13,12 +14,12 @@ import bashlex
 
 # Simple commands that are always safe
 SAFE_COMMANDS = {
-    "ack", "basename", "cat", "cd", "cut", "date", "df", "diff",
-    "dirname", "du", "echo", "env", "false", "fd", "file", "grep", "groups",
-    "head", "hostname", "id", "jq", "ls", "lsof", "mkdir",
-    "printenv", "ps", "pwd", "readlink", "realpath", "rg", "ss",
-    "stat", "tail", "tr", "tree", "true", "type", "uname", "uniq",
-    "uptime", "wc", "which", "whoami",
+    "ack", "basename", "bashlex-debug.py", "cat", "cd", "custom-perms.py",
+    "cut", "date", "df", "diff", "dirname", "du", "echo", "env", "false",
+    "fd", "file", "grep", "groups", "head", "hostname", "id", "jq", "ls",
+    "lsof", "mkdir", "printenv", "ps", "pwd", "readlink", "realpath", "rg",
+    "ss", "stat", "tail", "test-perms.py", "tr", "tree", "true", "type",
+    "uname", "uniq", "uptime", "wc", "which", "whoami",
 }
 
 # Commands that are safe when they start with specific token sequences
