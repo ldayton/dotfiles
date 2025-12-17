@@ -36,7 +36,6 @@ PREFIX_COMMANDS = {
     "git stash list",
     "node --version",
     "python --version",
-    "pre-commit",
 }
 
 # Wrapper commands that just modify how the inner command runs
@@ -113,6 +112,11 @@ CLI_CONFIGS = {
     },
     "cdk": {
         "safe_actions": {"diff", "doctor", "docs", "list", "ls", "metadata", "notices", "synth"},
+        "safe_prefixes": (),
+        "parser": "first_token",
+    },
+    "pre-commit": {
+        "safe_actions": {"help", "run", "sample-config", "validate-config", "validate-manifest"},
         "safe_prefixes": (),
         "parser": "first_token",
     },

@@ -157,7 +157,6 @@ TESTS = [
     ("git stash list", True),
     ("node --version", True),
     ("python --version", True),
-    ("pre-commit", True),
     ("pre-commit run", True),
     ("pre-commit run --all-files", True),
 
