@@ -175,10 +175,21 @@ def check_git(tokens):
     return action in config["safe_actions"]
 
 
+def check_openssl(tokens):
+    """Approve openssl x509 if -noout is present (read-only display)."""
+    if len(tokens) < 2:
+        return False
+    subcommand = tokens[1]
+    if subcommand == "x509" and "-noout" in tokens:
+        return True
+    return False
+
+
 CUSTOM_CHECKS = {
     "awk": check_awk,
     "find": check_find,
     "git": check_git,
+    "openssl": check_openssl,
     "sed": check_sed,
     "sort": check_sort,
 }

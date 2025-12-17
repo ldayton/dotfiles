@@ -197,6 +197,14 @@ TESTS = [
     ("kubectl --context=foo delete pod list", False),  # deleting pod named "list"
     ("kubectl apply -f foo.yaml", False),
     ("kubectl exec -it foo -- bash", False),
+
+    # Openssl x509 with -noout (read-only)
+    ("openssl x509 -noout -text", True),
+    ("openssl x509 -noout -text -in cert.pem", True),
+    ("openssl x509 -noout -subject -issuer", True),
+    ("openssl x509 -text", False),  # no -noout, could write encoded output
+    ("openssl x509 -in cert.pem -out cert.der", False),
+    ("openssl req -new -key key.pem", False),
 ]
 
 
