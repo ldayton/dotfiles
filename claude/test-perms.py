@@ -38,7 +38,11 @@ TESTS = [
     ("kubectl get pods", True),
     ("gh pr list", True),
     ("gh pr view 123 --repo foo/bar", True),
+    ("gh --repo foo/bar pr list", True),
+    ("gh -R foo/bar pr view 123", True),
     ("docker ps", True),
+    ("docker --host tcp://localhost:2375 ps", True),
+    ("docker -H unix:///var/run/docker.sock images", True),
     ("brew list", True),
 
     # CLI tools - unsafe (should defer)
@@ -53,7 +57,9 @@ TESTS = [
     ("git tag -d v1.0", False),
     ("kubectl delete pod foo", False),
     ("gh pr create", False),
+    ("gh -R foo/bar pr create", False),
     ("docker run ubuntu", False),
+    ("docker --host tcp://localhost run ubuntu", False),
     ("brew install foo", False),
 
     # Custom checks

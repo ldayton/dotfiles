@@ -88,11 +88,13 @@ CLI_CONFIGS = {
         "safe_actions": {"checks", "diff", "list", "search", "status", "view"},
         "safe_prefixes": (),
         "parser": "second_token",
+        "flags_with_arg": {"-R", "--repo"},
     },
     "docker": {
         "safe_actions": {"diff", "events", "history", "images", "inspect", "logs", "port", "ps", "stats", "top"},
         "safe_prefixes": (),
         "parser": "first_token",
+        "flags_with_arg": {"-c", "--config", "--context", "-H", "--host", "-l", "--log-level"},
     },
     "brew": {
         "safe_actions": {"config", "deps", "desc", "doctor", "info", "leaves", "list", "options", "outdated", "search", "uses"},
@@ -321,12 +323,34 @@ def get_cli_action(tokens, parser, config=None):
         return None
     elif parser == "first_token":
         # docker <action>, brew <action>
-        if tokens:
-            return tokens[0]
+        # Skip global flags and their values
+        flags_with_arg = config.get("flags_with_arg", set()) if config else set()
+        i = 0
+        while i < len(tokens):
+            if tokens[i] in flags_with_arg:
+                i += 2
+            elif tokens[i].startswith("-"):
+                i += 1
+            else:
+                break
+        if i < len(tokens):
+            return tokens[i]
+        return None
     elif parser == "second_token":
         # gh <resource> <action>
-        if len(tokens) >= 2:
-            return tokens[1]
+        # Skip global flags and their values
+        flags_with_arg = config.get("flags_with_arg", set()) if config else set()
+        i = 0
+        while i < len(tokens):
+            if tokens[i] in flags_with_arg:
+                i += 2
+            elif tokens[i].startswith("-"):
+                i += 1
+            else:
+                break
+        if i + 1 < len(tokens):
+            return tokens[i + 1]
+        return None
     elif parser == "scan":
         # Scan first 4 non-flag tokens for a known action
         safe_actions = config["safe_actions"] if config else set()
