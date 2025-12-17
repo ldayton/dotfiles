@@ -65,7 +65,7 @@ WRAPPERS = {
 #   "aws": action is second token (aws <service> <action>)
 #   "first_token": action is first non-flag token
 #   "second_token": action is second non-flag token
-#   "scan": scan first 4 non-flag tokens for safe/unsafe action
+#   "variable_depth": action depth varies by service (see action_depth, service_depths)
 CLI_CONFIGS = {
     "aws": {
         "safe_actions": {"filter-log-events", "lookup-events", "ls", "tail", "wait"},
