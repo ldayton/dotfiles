@@ -14,10 +14,10 @@ import bashlex
 # Simple commands that are always safe
 SAFE_COMMANDS = {
     "ack", "basename", "cat", "cd", "cut", "date", "df", "diff",
-    "dirname", "du", "echo", "env", "fd", "file", "grep", "groups",
+    "dirname", "du", "echo", "env", "false", "fd", "file", "grep", "groups",
     "head", "hostname", "id", "jq", "ls", "lsof", "mkdir",
     "printenv", "ps", "pwd", "readlink", "realpath", "rg", "ss",
-    "stat", "tail", "tr", "tree", "type", "uname", "uniq",
+    "stat", "tail", "tr", "tree", "true", "type", "uname", "uniq",
     "uptime", "wc", "which", "whoami",
 }
 
