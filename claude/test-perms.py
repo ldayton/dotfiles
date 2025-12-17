@@ -178,6 +178,16 @@ TESTS = [
     ("gcloud compute instances delete list", False),  # deleting instance named "list"
     ("gcloud compute instances create foo", False),
     ("gcloud container clusters get-credentials foo", True),  # get- prefix
+
+    # Az with positional args before flags
+    ("az vm list --resource-group mygroup", True),
+    ("az vm show myvm --resource-group mygroup", True),
+    ("az storage account list", True),
+    ("az keyvault secret show --name mysecret --vault-name myvault", True),
+    ("az vm delete myvm --resource-group mygroup", False),
+    ("az vm delete list", False),  # deleting vm named "list"
+    ("az vm create myvm --resource-group mygroup", False),
+    ("az vm start myvm", False),
 ]
 
 

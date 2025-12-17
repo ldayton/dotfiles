@@ -158,6 +158,30 @@ def check_git(tokens):
     return action in config["safe_actions"]
 
 
+AZ_SAFE_ACTIONS = {"list", "show", "get", "export"}
+AZ_UNSAFE_ACTIONS = {
+    "create", "delete", "update", "set", "remove", "add", "import", "start",
+    "stop", "restart", "deallocate", "redeploy", "attach", "detach", "invoke",
+}
+
+
+def check_az(tokens):
+    """Approve az if a safe action is found in the first few tokens."""
+    args = tokens[1:]
+    non_flag_count = 0
+    for token in args:
+        if token.startswith("-"):
+            continue
+        non_flag_count += 1
+        if non_flag_count > 4:
+            return False
+        if token in AZ_SAFE_ACTIONS or token.startswith(("get-", "list-")):
+            return True
+        if token in AZ_UNSAFE_ACTIONS:
+            return False
+    return False
+
+
 GCLOUD_SAFE_ACTIONS = {"describe", "list", "get", "get-iam-policy", "export"}
 GCLOUD_UNSAFE_ACTIONS = {
     "create", "delete", "update", "set", "remove", "add", "import", "patch",
@@ -186,6 +210,7 @@ def check_gcloud(tokens):
 
 CUSTOM_CHECKS = {
     "awk": check_awk,
+    "az": check_az,
     "find": check_find,
     "gcloud": check_gcloud,
     "git": check_git,
