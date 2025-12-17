@@ -14,7 +14,7 @@ import bashlex
 # Simple commands that are always safe
 SAFE_COMMANDS = {
     "ack", "basename", "cat", "cd", "cut", "date", "df", "diff",
-    "dirname", "du", "echo", "env", "file", "grep", "groups",
+    "dirname", "du", "echo", "env", "fd", "file", "grep", "groups",
     "head", "hostname", "id", "jq", "ls", "lsof", "mkdir",
     "printenv", "ps", "pwd", "readlink", "realpath", "rg", "ss",
     "stat", "tail", "tr", "tree", "type", "uname", "uniq",
@@ -47,7 +47,7 @@ WRAPPERS = {
 # CLI tools with action-based checks
 CLI_CONFIGS = {
     "aws": {
-        "safe_actions": {"ls"},
+        "safe_actions": {"ls", "tail"},
         "safe_prefixes": ("describe-", "get-", "head-", "list-"),
         "parser": "aws",
     },
@@ -116,8 +116,29 @@ def check_sort(tokens):
     return True
 
 
+def check_sed(tokens):
+    """Approve sed if no -i flag (in-place editing)."""
+    for t in tokens:
+        if t == "-i" or t.startswith("-i") or t.startswith("--in-place"):
+            return False
+    return True
+
+
+def check_awk(tokens):
+    """Approve awk if no -f flag and no dangerous patterns in script."""
+    for t in tokens:
+        if t == "-f" or t.startswith("-f") or t == "--file":
+            return False
+        if not t.startswith("-"):
+            if ">" in t or "|" in t or "system" in t:
+                return False
+    return True
+
+
 CUSTOM_CHECKS = {
+    "awk": check_awk,
     "find": check_find,
+    "sed": check_sed,
     "sort": check_sort,
 }
 

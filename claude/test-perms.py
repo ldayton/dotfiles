@@ -38,6 +38,16 @@ TESTS = [
     ("find . -delete", False),
     ("sort file.txt", True),
     ("sort -o output.txt file.txt", False),
+    ("sed 's/foo/bar/' file.txt", True),
+    ("sed -n '1,10p' file.txt", True),
+    ("sed -i 's/foo/bar/' file.txt", False),
+    ("sed -i.bak 's/foo/bar/' file.txt", False),
+    ("sed --in-place 's/foo/bar/' file.txt", False),
+    ("awk '{print $1}' file.txt", True),
+    ("awk -F: '{print $1}' /etc/passwd", True),
+    ("awk -f script.awk file.txt", False),
+    ("awk '{print > \"out.txt\"}' file.txt", False),
+    ("awk '{system(\"rm file\")}'", False),
 
     # Chained commands - should check ALL commands
     ("aws s3 ls && aws s3 ls", True),  # both safe
