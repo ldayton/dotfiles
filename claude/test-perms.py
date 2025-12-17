@@ -147,6 +147,13 @@ TESTS = [
     # Prefix commands - partial token matches should NOT match
     ("python --version-info", False),
     ("pre-commit-hook", False),
+
+    # Git with -C flag
+    ("git -C /some/path status", True),
+    ("git -C /some/path log --oneline -5", True),
+    ("git -C /tmp push --force", False),
+    ("git --git-dir=/some/.git status", True),
+    ("git -c core.editor=vim log", True),
 ]
 
 

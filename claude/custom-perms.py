@@ -135,9 +135,33 @@ def check_awk(tokens):
     return True
 
 
+# Git flags that take an argument
+GIT_FLAGS_WITH_ARG = {"-C", "-c", "--git-dir", "--work-tree"}
+
+
+def check_git(tokens):
+    """Approve git if action is safe, stripping -C and similar flags."""
+    # tokens[0] is 'git', work with the rest
+    args = tokens[1:]
+    # Strip flags that take arguments
+    while args:
+        if args[0] in GIT_FLAGS_WITH_ARG and len(args) >= 2:
+            args = args[2:]
+        elif args[0].startswith("-"):
+            args = args[1:]
+        else:
+            break
+    if not args:
+        return False
+    action = args[0]
+    config = CLI_CONFIGS["git"]
+    return action in config["safe_actions"]
+
+
 CUSTOM_CHECKS = {
     "awk": check_awk,
     "find": check_find,
+    "git": check_git,
     "sed": check_sed,
     "sort": check_sort,
 }
