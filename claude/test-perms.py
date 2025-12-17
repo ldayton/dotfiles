@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
-"""Test cases for custom-perms-v2.py"""
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "bashlex",
+# ]
+# ///
+"""Test cases for custom-perms.py"""
 
-import json
-import subprocess
 import sys
+
+# Import the module directly
+import importlib.util
 from pathlib import Path
+
+spec = importlib.util.spec_from_file_location(
+    "custom_perms", Path(__file__).parent / "custom-perms.py"
+)
+custom_perms = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(custom_perms)
 
 # (command, expected_approved_by_hook)
 TESTS = [
@@ -158,20 +171,14 @@ TESTS = [
 
 
 def test_command(cmd, expected_safe):
-    """Run custom-perms.py with a command and check result."""
-    input_data = json.dumps({"tool_input": {"command": cmd}})
-
-    result = subprocess.run(
-        ["uv", "run", "custom-perms.py"],
-        input=input_data,
-        capture_output=True,
-        text=True,
-        cwd=Path(__file__).parent,
-    )
-
-    # If output contains "approve", it's safe
-    is_safe = "approve" in result.stdout
-
+    """Test a command directly using the module's functions."""
+    commands = custom_perms.parse_commands(cmd)
+    if commands is None:
+        is_safe = False
+    elif not commands:
+        is_safe = False
+    else:
+        is_safe = all(custom_perms.is_command_safe(tokens) for tokens in commands)
     return is_safe == expected_safe
 
 
