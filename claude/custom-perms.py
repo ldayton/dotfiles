@@ -17,7 +17,7 @@ SAFE_COMMANDS = {
     "ack", "arch", "base32", "base64", "basenc", "basename",
     "bashlex-debug.py", "cat", "cd", "cloc", "comm", "custom-perms.py",
     "cut", "date", "df", "diff", "dig", "dir", "dirname", "du", "echo",
-    "env", "false", "fd", "file", "free", "grep", "groups", "head", "host",
+    "env", "false", "fd", "file", "free", "getent", "grep", "groups", "head", "host",
     "hostid", "hostname", "id", "join", "jq", "logname", "ls", "lsof",
     "mkdir", "netstat", "nproc", "nslookup", "paste", "pinky", "printenv",
     "printf", "ps", "pwd", "readlink", "realpath", "rg", "sleep", "ss",
@@ -68,8 +68,8 @@ UNSAFE_ACTIONS = {
 #   "scan": scan first 4 non-flag tokens for safe/unsafe action
 CLI_CONFIGS = {
     "aws": {
-        "safe_actions": {"ls", "tail"},
-        "safe_prefixes": ("describe-", "get-", "head-", "list-"),
+        "safe_actions": {"filter-log-events", "lookup-events", "ls", "tail", "wait"},
+        "safe_prefixes": ("batch-get-", "describe-", "get-", "head-", "list-"),
         "parser": "aws",
     },
     "az": {
