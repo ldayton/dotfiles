@@ -76,11 +76,13 @@ CLI_CONFIGS = {
         "safe_actions": {"list", "show", "get", "export"},
         "safe_prefixes": ("get-", "list-"),
         "parser": "scan",
+        "flags_with_arg": {"-g", "-o", "--output", "--query", "--resource-group", "--subscription"},
     },
     "gcloud": {
         "safe_actions": {"list", "describe", "get", "get-iam-policy", "export"},
         "safe_prefixes": ("get-", "list-", "describe-"),
         "parser": "scan",
+        "flags_with_arg": {"--account", "--configuration", "--format", "--project", "--region", "--zone"},
     },
     "gh": {
         "safe_actions": {"checks", "diff", "list", "search", "status", "view"},
@@ -106,6 +108,7 @@ CLI_CONFIGS = {
         "safe_actions": {"api-resources", "api-versions", "cluster-info", "describe", "explain", "get", "logs", "top", "version"},
         "safe_prefixes": (),
         "parser": "scan",
+        "flags_with_arg": {"-n", "--namespace", "--context", "--cluster", "--kubeconfig", "-o", "--output"},
     },
     "cdk": {
         "safe_actions": {"diff", "doctor", "docs", "list", "ls", "metadata", "notices", "synth"},
@@ -328,8 +331,16 @@ def get_cli_action(tokens, parser, config=None):
         # Scan first 4 non-flag tokens for a known action
         safe_actions = config["safe_actions"] if config else set()
         safe_prefixes = config["safe_prefixes"] if config else ()
+        flags_with_arg = config.get("flags_with_arg", set()) if config else set()
         non_flag_count = 0
+        skip_next = False
         for token in tokens:
+            if skip_next:
+                skip_next = False
+                continue
+            if token in flags_with_arg:
+                skip_next = True
+                continue
             if token.startswith("-"):
                 continue
             non_flag_count += 1

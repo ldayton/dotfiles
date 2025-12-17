@@ -179,6 +179,11 @@ TESTS = [
     ("git --git-dir=/some/.git status", True),
     ("git -c core.editor=vim log", True),
 
+    # Gcloud with global flags (values could match action names)
+    ("gcloud --project delete compute instances list", True),
+    ("gcloud --format delete compute instances list", True),
+    ("gcloud --project myproj compute instances delete foo", False),
+
     # Gcloud with --flag value patterns
     ("gcloud compute instances list", True),
     ("gcloud compute instances list --project foo", True),
@@ -190,6 +195,12 @@ TESTS = [
     ("gcloud compute instances create foo", False),
     ("gcloud container clusters get-credentials foo", True),  # get- prefix
 
+    # Az with global flags (values could match action names)
+    ("az --subscription delete vm list", True),
+    ("az --query delete vm show", True),
+    ("az -o delete vm list", True),
+    ("az --subscription mysub vm delete foo", False),
+
     # Az with positional args before flags
     ("az vm list --resource-group mygroup", True),
     ("az vm show myvm --resource-group mygroup", True),
@@ -199,6 +210,12 @@ TESTS = [
     ("az vm delete list", False),  # deleting vm named "list"
     ("az vm create myvm --resource-group mygroup", False),
     ("az vm start myvm", False),
+
+    # Kubectl with global flags (values could match action names)
+    ("kubectl --context delete get pods", True),
+    ("kubectl -n delete get pods", True),
+    ("kubectl --namespace exec get pods", True),
+    ("kubectl --context mycluster delete pod foo", False),
 
     # Kubectl with flags before action
     ("kubectl --context=foo get pods", True),
