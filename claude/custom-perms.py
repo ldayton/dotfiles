@@ -54,17 +54,6 @@ WRAPPERS = {
 
 # === Data: CLI configurations ===
 
-# Known unsafe actions for CLIs using "scan" parser
-UNSAFE_ACTIONS = {
-    "create", "delete", "update", "set", "remove", "add", "import", "patch",
-    "start", "stop", "reset", "restart", "ssh", "scp", "deploy", "rollback",
-    "invoke", "attach", "detach", "deallocate", "redeploy",
-    "set-iam-policy", "add-iam-policy-binding", "remove-iam-policy-binding",
-    "activate-service-account", "revoke", "login", "apply", "edit", "replace",
-    "run", "exec", "scale", "cordon", "uncordon", "drain", "taint", "label",
-    "annotate", "patch", "rollout",
-}
-
 # CLI tools with action-based checks
 # parser types:
 #   "aws": action is second token (aws <service> <action>)
@@ -80,13 +69,17 @@ CLI_CONFIGS = {
     "az": {
         "safe_actions": {"list", "show", "get", "export"},
         "safe_prefixes": ("get-", "list-"),
-        "parser": "scan",
+        "parser": "variable_depth",
+        "action_depth": 1,
+        "service_depths": {"storage": 2, "keyvault": 2, "network": 2},
         "flags_with_arg": {"-g", "-o", "--output", "--query", "--resource-group", "--subscription"},
     },
     "gcloud": {
         "safe_actions": {"list", "describe", "get", "get-iam-policy", "export"},
         "safe_prefixes": ("get-", "list-", "describe-"),
-        "parser": "scan",
+        "parser": "variable_depth",
+        "action_depth": 2,
+        "service_depths": {"auth": 1, "config": 1, "projects": 1, "components": 1, "topic": 1},
         "flags_with_arg": {"--account", "--configuration", "--format", "--project", "--region", "--zone"},
     },
     "gh": {
@@ -115,7 +108,7 @@ CLI_CONFIGS = {
     "kubectl": {
         "safe_actions": {"api-resources", "api-versions", "cluster-info", "describe", "explain", "get", "logs", "top", "version"},
         "safe_prefixes": (),
-        "parser": "scan",
+        "parser": "first_token",
         "flags_with_arg": {"-n", "--namespace", "--context", "--cluster", "--kubeconfig", "-o", "--output"},
     },
     "cdk": {
@@ -313,31 +306,22 @@ def _get_nth_token(tokens: list[str], n: int, flags_with_arg: set[str]) -> str |
     return None
 
 
-def _scan_for_action(tokens: list[str], config: dict[str, Any]) -> str | None:
-    """Scan first 4 non-flag tokens for a known safe/unsafe action."""
-    safe_actions = config["safe_actions"]
-    safe_prefixes = config["safe_prefixes"]
+def _get_variable_depth_action(tokens: list[str], config: dict[str, Any]) -> str | None:
+    """Get action at variable depth based on first token (service/group)."""
     flags_with_arg = config.get("flags_with_arg", set())
-    non_flag_count = 0
-    skip_next = False
-    for token in tokens:
-        if skip_next:
-            skip_next = False
-            continue
-        if token in flags_with_arg:
-            skip_next = True
-            continue
-        if token.startswith("-"):
-            continue
-        non_flag_count += 1
-        if non_flag_count > 4:
-            return None
-        if token in safe_actions:
-            return token
-        if safe_prefixes and token.startswith(safe_prefixes):
-            return token
-        if token in UNSAFE_ACTIONS:
-            return token
+    default_depth = config.get("action_depth", 1)
+    service_depths = config.get("service_depths", {})
+
+    i = skip_flags(tokens, flags_with_arg)
+    if i >= len(tokens):
+        return None
+
+    service = tokens[i]
+    depth = service_depths.get(service, default_depth)
+
+    target_idx = i + depth
+    if target_idx < len(tokens):
+        return tokens[target_idx]
     return None
 
 
@@ -345,7 +329,7 @@ PARSERS: dict[str, Callable[[list[str], dict[str, Any]], str | None]] = {
     "aws": lambda tokens, config: _get_aws_action(tokens),
     "first_token": lambda tokens, config: _get_nth_token(tokens, 0, config.get("flags_with_arg", set())),
     "second_token": lambda tokens, config: _get_nth_token(tokens, 1, config.get("flags_with_arg", set())),
-    "scan": _scan_for_action,
+    "variable_depth": _get_variable_depth_action,
 }
 
 
