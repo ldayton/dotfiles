@@ -31,7 +31,9 @@ brew "aws-cdk"                # AWS Cloud Development Kit for infrastructure as 
 brew "awscli"                 # official AWS command-line interface
 brew "awscurl"                # curl wrapper for AWS API calls with sigv4
 brew "awslogs"                # query and stream CloudWatch logs
+brew "helm"                   # Kubernetes package manager
 cask "session-manager-plugin" # AWS Systems Manager Session Manager plugin
+brew "terraform"              # infrastructure as code tool for cloud provisioning
 
 
 # Network Tools

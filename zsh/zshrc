@@ -50,6 +50,11 @@ if command -v atuin &> /dev/null; then
     eval "$(atuin init zsh --disable-up-arrow)"
 fi
 
+#--- wsl ---#
+if [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
+    export BROWSER=wslview
+fi
+
 #--- aliases ---#
 if command -v eza &> /dev/null; then
     alias ls="eza"

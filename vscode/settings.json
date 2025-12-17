@@ -5,7 +5,6 @@
   // "editor.fontFamily": "'JetBrainsMono Nerd Font Mono', 'Courier New'",
   "editor.fontFamily": "'CaskaydiaCove Nerd Font Mono', 'Courier New'",
   // "editor.fontWeight": "600",
-
   // Editor settings
   "editor.accessibilitySupport": "off",
   "editor.fontSize": 14,
@@ -17,28 +16,32 @@
   "editor.tabSize": 2,
   "editor.wordWrap": "on",
 
+  // File watching
+  "remote.WSL.fileWatcher.polling": true,
+  "remote.WSL.fileWatcher.pollingInterval": 1000,
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+  },
+
   // Workbench settings
   "workbench.colorTheme": "Default High Contrast",
   "workbench.preferredHighContrastColorTheme": "Default High Contrast Light",
   "workbench.startupEditor": "none",
-
   // Bracket pair colorization
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": "active",
-
   // Files settings
   "files.autoSave": "afterDelay",
-
   // Explorer settings
   "explorer.confirmDelete": false,
   "explorer.confirmDragAndDrop": false,
-
   // Git settings
   "git.autofetch": true,
   "git.confirmSync": false,
   "git.enableSmartCommit": true,
   "git.openRepositoryInParentFolders": "never",
-
   // Terminal settings
   "terminal.integrated.confirmOnKill": "never",
   "terminal.integrated.defaultProfile.linux": "zsh",
@@ -47,7 +50,6 @@
   "terminal.integrated.cursorStyle": "block",
   "terminal.integrated.copyOnSelection": true,
   "terminal.integrated.scrollback": 100000,
-
   // Language-specific settings
   "[python]": {
     "diffEditor.ignoreTrimWhitespace": false,
@@ -60,23 +62,19 @@
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
-
   // Rust-analyzer settings
   "rust-analyzer.cargo.targetDir": true,
   "rust-analyzer.check.command": "clippy",
   "rust-analyzer.inlayHints.typeHints.enable": true,
   "rust-analyzer.semanticHighlighting.strings.enable": true,
   "rust-analyzer.semanticHighlighting.operator.enable": true,
-
   // Debug rust-analyzer crashes
   "rust-analyzer.server.extraEnv": {
     "RA_LOG": "info",
     "RUST_BACKTRACE": "1"
   },
-
   // Verbose logging for troubleshooting
   "rust-analyzer.trace.server": "verbose",
-
   // Other settings
   "redhat.telemetry.enabled": false,
   "update.showReleaseNotes": false,
