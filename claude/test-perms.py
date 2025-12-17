@@ -118,6 +118,11 @@ TESTS = [
     ("grep foo bar.txt", True),
     ("cat file.txt", True),
 
+    # Scripts with paths (basename matching)
+    ("./test-perms.py", True),
+    ("/path/to/test-perms.py", True),
+    ("./unknown-script.py", False),
+
     # Simple commands chained
     ("ls && cat foo", True),
     ("ls && rm foo", False),

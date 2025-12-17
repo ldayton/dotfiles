@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 import json
+import os
 import re
 import sys
 
@@ -19,16 +20,21 @@ import bashlex
 # === Data: What commands are safe ===
 
 SAFE_COMMANDS = {
-    "ack", "arch", "base32", "base64", "basenc", "basename",
-    "bashlex-debug.py", "cat", "cd", "cloc", "comm", "custom-perms.py",
-    "cut", "date", "df", "diff", "dig", "dir", "dirname", "du", "echo",
-    "env", "false", "fd", "file", "free", "getent", "grep", "groups", "head", "host",
-    "hostid", "hostname", "id", "join", "jq", "logname", "ls", "lsof",
-    "mkdir", "netstat", "nproc", "nslookup", "paste", "ping", "pinky", "printenv",
-    "printf", "ps", "pwd", "readlink", "realpath", "rg", "sleep", "ss",
-    "stat", "tail", "test-perms.py", "traceroute", "tr", "tree", "true",
+    "ack", "arch", "base32", "base64", "basenc", "basename", "cat", "cd",
+    "cloc", "comm", "cut", "date", "df", "diff", "dig", "dir", "dirname",
+    "du", "echo", "env", "false", "fd", "file", "free", "getent", "grep",
+    "groups", "head", "host", "hostid", "hostname", "id", "join", "jq",
+    "logname", "ls", "lsof", "mkdir", "netstat", "nproc", "nslookup", "paste",
+    "ping", "pinky", "printenv", "printf", "ps", "pwd", "readlink", "realpath",
+    "rg", "sleep", "ss", "stat", "tail", "traceroute", "tr", "tree", "true",
     "tsort", "tty", "type", "uname", "uniq", "uptime", "users", "vdir",
     "wc", "which", "who", "whoami", "yes",
+}
+
+SAFE_SCRIPTS = {
+    "bashlex-debug.py",
+    "custom-perms.py",
+    "test-perms.py",
 }
 
 PREFIX_COMMANDS = {
@@ -357,6 +363,9 @@ def is_command_safe(tokens: list[str]) -> bool:
     args = tokens[1:]
 
     if cmd in SAFE_COMMANDS:
+        return True
+
+    if os.path.basename(cmd) in SAFE_SCRIPTS:
         return True
 
     for prefix in PREFIX_COMMANDS:
