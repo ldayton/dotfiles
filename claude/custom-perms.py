@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 import json
+import re
 import sys
 
 import bashlex
@@ -219,9 +220,7 @@ def check_sed(tokens: list[str]) -> bool:
 
 def check_sort(tokens: list[str]) -> bool:
     """Approve sort if no -o flag."""
-    if "-o" in tokens or any(t.startswith("-o") for t in tokens):
-        return False
-    return True
+    return not any(t.startswith("-o") for t in tokens)
 
 
 CUSTOM_CHECKS: dict[str, Callable[[list[str]], bool]] = {
@@ -426,9 +425,7 @@ def get_command_nodes(node: Any) -> list[list[str]] | None:
 
 def preprocess_command(cmd_string: str) -> str:
     """Strip bash reserved words that bashlex doesn't handle."""
-    import re
-    cmd_string = re.sub(r'\btime\s+(-p\s+)?', '', cmd_string)
-    return cmd_string
+    return re.sub(r'\btime\s+(-p\s+)?', '', cmd_string)
 
 
 def parse_commands(cmd_string: str) -> list[list[str]] | None:
