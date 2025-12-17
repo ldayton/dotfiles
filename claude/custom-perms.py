@@ -14,14 +14,16 @@ import bashlex
 
 # Simple commands that are always safe
 SAFE_COMMANDS = {
-    "ack", "basename", "bashlex-debug.py", "cat", "cd", "cloc",
-    "custom-perms.py", "cut", "date", "df", "diff", "dig", "dirname",
-    "du", "echo", "env", "false", "fd", "file", "free", "grep", "groups",
-    "head", "host", "hostname", "id", "jq", "ls", "lsof", "mkdir",
-    "netstat", "nslookup", "printenv", "ps", "pwd", "readlink", "realpath",
-    "rg", "sleep", "ss", "stat", "tail", "test-perms.py", "traceroute",
-    "tr", "tree", "true", "type", "uname", "uniq", "uptime", "wc", "which",
-    "whoami",
+    "ack", "arch", "base32", "base64", "basenc", "basename",
+    "bashlex-debug.py", "cat", "cd", "cloc", "comm", "custom-perms.py",
+    "cut", "date", "df", "diff", "dig", "dir", "dirname", "du", "echo",
+    "env", "false", "fd", "file", "free", "grep", "groups", "head", "host",
+    "hostid", "hostname", "id", "join", "jq", "logname", "ls", "lsof",
+    "mkdir", "netstat", "nproc", "nslookup", "paste", "pinky", "printenv",
+    "printf", "ps", "pwd", "readlink", "realpath", "rg", "sleep", "ss",
+    "stat", "tail", "test-perms.py", "traceroute", "tr", "tree", "true",
+    "tsort", "tty", "type", "uname", "uniq", "uptime", "users", "vdir",
+    "wc", "which", "who", "whoami", "yes",
 }
 
 # Commands that are safe when they start with specific token sequences
