@@ -16,12 +16,12 @@ import bashlex
 SAFE_COMMANDS = {
     "ack", "basename", "bashlex-debug.py", "cat", "cd", "cloc",
     "custom-perms.py", "cut", "date", "df", "diff", "dig", "dirname",
-    "dmesg", "du", "echo", "env", "false", "fd", "file", "free", "grep",
-    "groups", "head", "host", "hostname", "id", "ifconfig", "ip",
-    "journalctl", "jq", "ls", "lsof", "mkdir", "netstat", "nslookup",
-    "ping", "printenv", "ps", "pwd", "readlink", "realpath", "rg", "ss",
-    "stat", "tail", "test-perms.py", "traceroute", "tr", "tree", "true",
-    "type", "uname", "uniq", "uptime", "wc", "which", "whoami",
+    "du", "echo", "env", "false", "fd", "file", "free", "grep", "groups",
+    "head", "host", "hostname", "id", "jq", "ls", "lsof", "mkdir",
+    "netstat", "nslookup", "printenv", "ps", "pwd", "readlink", "realpath",
+    "rg", "ss", "stat", "tail", "test-perms.py", "traceroute", "tr",
+    "tree", "true", "type", "uname", "uniq", "uptime", "wc", "which",
+    "whoami",
 }
 
 # Commands that are safe when they start with specific token sequences
@@ -120,10 +120,69 @@ CLI_ALIASES = {
 }
 
 
+def check_dmesg(tokens):
+    """Approve dmesg if no clear flags."""
+    for t in tokens:
+        if t in {"-c", "-C", "--clear"}:
+            return False
+    return True
+
+
 def check_find(tokens):
     """Approve find if no dangerous flags."""
     dangerous = {"-exec", "-execdir", "-ok", "-okdir", "-delete"}
     if dangerous & set(tokens):
+        return False
+    return True
+
+
+def check_ifconfig(tokens):
+    """Approve ifconfig if no modifying arguments (up/down/address changes)."""
+    dangerous = {"up", "down", "add", "del", "delete", "tunnel", "promisc"}
+    if dangerous & set(tokens):
+        return False
+    # Block if setting address (any token that looks like IP or netmask assignment)
+    for t in tokens:
+        if t.startswith("netmask") or t.startswith("broadcast"):
+            return False
+    return True
+
+
+def check_ip(tokens):
+    """Approve ip if using read-only subcommands."""
+    if len(tokens) < 2:
+        return False
+    # ip [options] OBJECT { COMMAND }
+    # Find the object (first non-flag token after 'ip')
+    obj = None
+    for t in tokens[1:]:
+        if t.startswith("-"):
+            continue
+        obj = t
+        break
+    if not obj:
+        return False
+    safe_objects = {"addr", "address", "link", "route", "neigh", "neighbor", "rule", "maddr", "mroute", "tunnel", "netns"}
+    if obj not in safe_objects:
+        return False
+    # Block modifying commands
+    dangerous = {"add", "del", "delete", "change", "replace", "set", "flush"}
+    if dangerous & set(tokens):
+        return False
+    return True
+
+
+def check_journalctl(tokens):
+    """Approve journalctl if no modifying flags."""
+    for t in tokens:
+        if t in {"--rotate", "--flush", "--sync", "--relinquish-var"} or t.startswith("--vacuum"):
+            return False
+    return True
+
+
+def check_ping(tokens):
+    """Approve ping if no flood flag."""
+    if "-f" in tokens:
         return False
     return True
 
@@ -189,9 +248,14 @@ def check_openssl(tokens):
 
 CUSTOM_CHECKS = {
     "awk": check_awk,
+    "dmesg": check_dmesg,
     "find": check_find,
     "git": check_git,
+    "ifconfig": check_ifconfig,
+    "ip": check_ip,
+    "journalctl": check_journalctl,
     "openssl": check_openssl,
+    "ping": check_ping,
     "sed": check_sed,
     "sort": check_sort,
 }

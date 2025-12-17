@@ -205,6 +205,35 @@ TESTS = [
     ("openssl x509 -text", False),  # no -noout, could write encoded output
     ("openssl x509 -in cert.pem -out cert.der", False),
     ("openssl req -new -key key.pem", False),
+
+    # Network diagnostic tools with checks
+    ("ip addr", True),
+    ("ip addr show", True),
+    ("ip route", True),
+    ("ip link show", True),
+    ("ip -4 addr show", True),
+    ("ip addr add 192.168.1.1/24 dev eth0", False),
+    ("ip link set eth0 up", False),
+    ("ip route del default", False),
+    ("ifconfig", True),
+    ("ifconfig eth0", True),
+    ("ifconfig eth0 up", False),
+    ("ifconfig eth0 down", False),
+    ("ifconfig eth0 192.168.1.1", True),  # viewing, not setting without netmask
+    ("ifconfig eth0 192.168.1.1 netmask 255.255.255.0", False),
+    ("journalctl", True),
+    ("journalctl -f", True),
+    ("journalctl -u sshd", True),
+    ("journalctl --rotate", False),
+    ("journalctl --vacuum-time=1d", False),
+    ("journalctl --flush", False),
+    ("dmesg", True),
+    ("dmesg -T", True),
+    ("dmesg -c", False),
+    ("dmesg --clear", False),
+    ("ping google.com", True),
+    ("ping -c 4 google.com", True),
+    ("ping -f google.com", False),
 ]
 
 
