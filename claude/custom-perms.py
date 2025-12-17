@@ -32,11 +32,16 @@ PREFIX_COMMANDS = {
 }
 
 # Wrapper commands that just modify how the inner command runs
+# Value is (prefix_tokens, skip_count) where skip_count can be:
+#   int: skip that many args after prefix
+#   None: skip flags and VAR=val pairs
+#   "nice": skip -n N style flags
 WRAPPERS = {
-    "time": 0,      # time <cmd>
-    "nice": None,   # nice [-n N] <cmd> - skip until non-flag
-    "timeout": 1,   # timeout <duration> <cmd>
-    "env": None,    # env [VAR=val]... <cmd> - skip VAR=val pairs
+    "time": (["time"], 0),
+    "nice": (["nice"], "nice"),
+    "timeout": (["timeout"], 1),
+    "env": (["env"], None),
+    "uv": (["uv", "run"], None),
 }
 
 # CLI tools with action-based checks
@@ -81,6 +86,11 @@ CLI_CONFIGS = {
         "safe_prefixes": (),
         "parser": "first_token",
     },
+    "cdk": {
+        "safe_actions": {"diff", "doctor", "docs", "list", "ls", "metadata", "notices", "synth"},
+        "safe_prefixes": (),
+        "parser": "first_token",
+    },
 }
 
 CLI_ALIASES = {
@@ -115,25 +125,28 @@ CUSTOM_CHECKS = {
 def strip_wrappers(tokens):
     """Strip wrapper commands and return inner command tokens."""
     while tokens and tokens[0] in WRAPPERS:
-        wrapper = tokens[0]
-        skip = WRAPPERS[wrapper]
-        tokens = tokens[1:]
+        prefix, skip = WRAPPERS[tokens[0]]
+        # Check if tokens start with the full prefix
+        if tokens[:len(prefix)] != prefix:
+            break
+        tokens = tokens[len(prefix):]
 
         if skip is None:
             # Skip flags and VAR=val pairs until we hit a command
             while tokens:
                 if tokens[0].startswith("-"):
                     tokens = tokens[1:]
-                    # Handle -n 10 style (skip next arg too)
-                    if wrapper == "nice" and tokens:
-                        tokens = tokens[1:]
                 elif "=" in tokens[0]:
-                    # env VAR=val
                     tokens = tokens[1:]
                 else:
                     break
+        elif skip == "nice":
+            # Skip -n N style flags
+            while tokens and tokens[0].startswith("-"):
+                tokens = tokens[1:]
+                if tokens:
+                    tokens = tokens[1:]
         elif skip > 0:
-            # Skip fixed number of args
             tokens = tokens[skip:]
 
     return tokens
@@ -223,6 +236,9 @@ def has_unsafe_output_redirect(node):
     if node.kind == "command":
         for part in node.parts:
             if part.kind == "redirect" and part.type in OUTPUT_REDIRECTS:
+                # 2>&1 style redirects have int output (fd), not a file - safe
+                if isinstance(part.output, int):
+                    continue
                 # Check if redirecting to a safe target
                 target = getattr(part.output, "word", None) if hasattr(part, "output") else None
                 if target in SAFE_REDIRECT_TARGETS:

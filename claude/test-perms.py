@@ -60,6 +60,14 @@ TESTS = [
     # Nested wrappers
     ("time nice git status", True),
 
+    # uv run wrapper
+    ("uv run cdk synth", True),
+    ("uv run cdk synth --quiet", True),
+    ("uv run --quiet cdk diff", True),
+    ("uv run cdk deploy", False),
+    ("uv run rm foo", False),
+    ("uv sync", False),  # not 'uv run', don't unwrap
+
     # Complex chains with wrappers
     ("time git status && git log", True),
     ("time git status && git push", False),
@@ -86,6 +94,10 @@ TESTS = [
     ("ls 2>/dev/null", True),
     ("ls &>/dev/null", True),
     ("grep -r pattern /dir 2>/dev/null | head -10", True),
+
+    # fd redirects (2>&1 style) - safe
+    ("ls 2>&1", True),
+    ("uv run cdk synth 2>&1 | head -10", True),
 
     # Input redirects - safe (read only)
     ("cat < input.txt", True),
