@@ -293,12 +293,29 @@ def strip_wrappers(tokens):
     return tokens
 
 
+# AWS CLI global flags that take an argument
+AWS_FLAGS_WITH_ARG = {
+    "--ca-bundle", "--cli-connect-timeout", "--cli-read-timeout", "--color",
+    "--endpoint-url", "--output", "--profile", "--region",
+}
+
+
 def get_cli_action(tokens, parser, config=None):
     """Extract action from CLI command based on parser type."""
     if parser == "aws":
-        # aws <service> <action>
-        if len(tokens) >= 2:
-            return tokens[1]
+        # aws [global-flags] <service> <action>
+        i = 0
+        while i < len(tokens):
+            if tokens[i] in AWS_FLAGS_WITH_ARG:
+                i += 2
+            elif tokens[i].startswith("--"):
+                i += 1
+            else:
+                break
+        # tokens[i] is service, tokens[i+1] is action
+        if i + 1 < len(tokens):
+            return tokens[i + 1]
+        return None
     elif parser == "first_token":
         # docker <action>, brew <action>
         if tokens:
