@@ -105,6 +105,7 @@ CLI_CONFIGS = {
         "safe_actions": {"blame", "cat-file", "check-ignore", "cherry", "describe", "diff", "fetch", "for-each-ref", "grep", "log", "ls-files", "ls-tree", "merge-base", "name-rev", "reflog", "rev-list", "rev-parse", "shortlog", "show", "status"},
         "safe_prefixes": (),
         "parser": "first_token",
+        "flags_with_arg": {"-C", "-c", "--git-dir", "--work-tree"},
     },
     "kubectl": {
         "safe_actions": {"api-resources", "api-versions", "cluster-info", "describe", "explain", "get", "logs", "top", "version"},
@@ -220,29 +221,6 @@ def check_awk(tokens):
     return True
 
 
-# Git flags that take an argument
-GIT_FLAGS_WITH_ARG = {"-C", "-c", "--git-dir", "--work-tree"}
-
-
-def check_git(tokens):
-    """Approve git if action is safe, stripping -C and similar flags."""
-    # tokens[0] is 'git', work with the rest
-    args = tokens[1:]
-    # Strip flags that take arguments
-    while args:
-        if args[0] in GIT_FLAGS_WITH_ARG and len(args) >= 2:
-            args = args[2:]
-        elif args[0].startswith("-"):
-            args = args[1:]
-        else:
-            break
-    if not args:
-        return False
-    action = args[0]
-    config = CLI_CONFIGS["git"]
-    return action in config["safe_actions"]
-
-
 def check_openssl(tokens):
     """Approve openssl x509 if -noout is present (read-only display)."""
     if len(tokens) < 2:
@@ -257,7 +235,6 @@ CUSTOM_CHECKS = {
     "awk": check_awk,
     "dmesg": check_dmesg,
     "find": check_find,
-    "git": check_git,
     "ifconfig": check_ifconfig,
     "ip": check_ip,
     "journalctl": check_journalctl,
@@ -305,6 +282,19 @@ AWS_FLAGS_WITH_ARG = {
 }
 
 
+def skip_flags(tokens, flags_with_arg):
+    """Return index of first non-flag token, skipping flags and their arguments."""
+    i = 0
+    while i < len(tokens):
+        if tokens[i] in flags_with_arg:
+            i += 2
+        elif tokens[i].startswith("-"):
+            i += 1
+        else:
+            break
+    return i
+
+
 def get_cli_action(tokens, parser, config=None):
     """Extract action from CLI command based on parser type."""
     if parser == "aws":
@@ -322,32 +312,14 @@ def get_cli_action(tokens, parser, config=None):
             return tokens[i + 1]
         return None
     elif parser == "first_token":
-        # docker <action>, brew <action>
-        # Skip global flags and their values
         flags_with_arg = config.get("flags_with_arg", set()) if config else set()
-        i = 0
-        while i < len(tokens):
-            if tokens[i] in flags_with_arg:
-                i += 2
-            elif tokens[i].startswith("-"):
-                i += 1
-            else:
-                break
+        i = skip_flags(tokens, flags_with_arg)
         if i < len(tokens):
             return tokens[i]
         return None
     elif parser == "second_token":
-        # gh <resource> <action>
-        # Skip global flags and their values
         flags_with_arg = config.get("flags_with_arg", set()) if config else set()
-        i = 0
-        while i < len(tokens):
-            if tokens[i] in flags_with_arg:
-                i += 2
-            elif tokens[i].startswith("-"):
-                i += 1
-            else:
-                break
+        i = skip_flags(tokens, flags_with_arg)
         if i + 1 < len(tokens):
             return tokens[i + 1]
         return None
