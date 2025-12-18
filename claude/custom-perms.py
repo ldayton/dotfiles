@@ -34,7 +34,15 @@ SAFE_COMMANDS = {
 SAFE_SCRIPTS = {
     "bashlex-debug.py",
     "custom-perms.py",
+    "post-dashboard.sh",
     "test-perms.py",
+}
+
+# Scripts that wrap curl and should be checked as curl
+CURL_WRAPPERS = {
+    "grafana.py",
+    "prometheus.py",
+    "pushgateway.py",
 }
 
 PREFIX_COMMANDS = {
@@ -229,8 +237,39 @@ def check_sort(tokens: list[str]) -> bool:
     return not any(t.startswith("-o") for t in tokens)
 
 
+# Curl flags that send data (imply POST or upload)
+CURL_DATA_FLAGS = {
+    "-d", "--data", "--data-binary", "--data-raw", "--data-ascii",
+    "--data-urlencode", "-F", "--form", "--form-string", "-T", "--upload-file",
+}
+
+
+def check_curl(tokens: list[str]) -> bool:
+    """Approve curl if GET/HEAD only (no data-sending or method-changing flags)."""
+    for i, t in enumerate(tokens):
+        # Block data/upload flags (and --flag=value variants)
+        if t in CURL_DATA_FLAGS:
+            return False
+        for flag in CURL_DATA_FLAGS:
+            if t.startswith(flag + "="):
+                return False
+        # Check -X/--request for non-safe methods
+        if t in {"-X", "--request"}:
+            if i + 1 < len(tokens):
+                method = tokens[i + 1].upper()
+                if method not in {"GET", "HEAD", "OPTIONS", "TRACE"}:
+                    return False
+        # Also catch --request=METHOD
+        if t.startswith("-X=") or t.startswith("--request="):
+            method = t.split("=", 1)[1].upper()
+            if method not in {"GET", "HEAD"}:
+                return False
+    return True
+
+
 CUSTOM_CHECKS: dict[str, Callable[[list[str]], bool]] = {
     "awk": check_awk,
+    "curl": check_curl,
     "dmesg": check_dmesg,
     "find": check_find,
     "ifconfig": check_ifconfig,
@@ -367,6 +406,10 @@ def is_command_safe(tokens: list[str]) -> bool:
 
     if os.path.basename(cmd) in SAFE_SCRIPTS:
         return True
+
+    # Curl wrappers should be checked as curl
+    if os.path.basename(cmd) in CURL_WRAPPERS:
+        return check_curl(tokens)
 
     for prefix in PREFIX_COMMANDS:
         prefix_tokens = prefix.split()
