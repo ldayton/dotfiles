@@ -40,9 +40,9 @@ SAFE_SCRIPTS = {
 
 # Scripts that wrap curl and should be checked as curl
 CURL_WRAPPERS = {
-    "grafana.py",
-    "prometheus.py",
-    "pushgateway.py",
+    "grafana.sh",
+    "prometheus.sh",
+    "pushgateway.sh",
 }
 
 PREFIX_COMMANDS = {

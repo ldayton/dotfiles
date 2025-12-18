@@ -102,12 +102,12 @@ TESTS = [
     ("curl --upload-file file.txt ftp://example.com", False),
 
     # Curl wrappers (scripts that wrap curl)
-    ("grafana.py query foo", True),
-    ("/path/to/prometheus.py get metrics", True),
-    ("pushgateway.py --help", True),
-    ("grafana.py -X POST data", False),
-    ("prometheus.py -d 'data' https://example.com", False),
-    ("pushgateway.py --data=foo", False),
+    ("grafana.sh query foo", True),
+    ("/path/to/prometheus.sh get metrics", True),
+    ("pushgateway.sh --help", True),
+    ("grafana.sh -X POST data", False),
+    ("prometheus.sh -d 'data' https://example.com", False),
+    ("pushgateway.sh --data=foo", False),
 
     # Chained commands - should check ALL commands
     ("aws s3 ls && aws s3 ls", True),  # both safe
