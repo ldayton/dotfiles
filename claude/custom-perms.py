@@ -267,6 +267,50 @@ def check_curl(tokens: list[str]) -> bool:
     return True
 
 
+def check_gh_api(tokens: list[str]) -> bool:
+    """Approve gh api if it's a GET request (no mutation flags)."""
+    # tokens[0] is 'gh', tokens[1] is 'api'
+    args = tokens[2:]
+
+    # First pass: determine the method
+    method = None
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in {"-X", "--method"}:
+            if i + 1 < len(args):
+                method = args[i + 1].upper()
+            i += 2
+        elif arg.startswith("-X") and len(arg) > 2:
+            method = arg[2:].upper()
+            i += 1
+        elif arg.startswith("--method="):
+            method = arg[9:].upper()
+            i += 1
+        else:
+            i += 1
+
+    # Explicit non-GET method is unsafe
+    if method is not None and method != "GET":
+        return False
+
+    # Second pass: check for params that imply POST (unless explicit GET)
+    has_mutation_flags = False
+    for arg in args:
+        if arg in {"-f", "--raw-field", "-F", "--field", "--input"}:
+            has_mutation_flags = True
+            break
+        if arg.startswith(("--raw-field=", "--field=", "--input=")):
+            has_mutation_flags = True
+            break
+
+    # Mutation flags only safe with explicit GET
+    if has_mutation_flags and method != "GET":
+        return False
+
+    return True
+
+
 CUSTOM_CHECKS: dict[str, Callable[[list[str]], bool]] = {
     "awk": check_awk,
     "curl": check_curl,
@@ -278,6 +322,11 @@ CUSTOM_CHECKS: dict[str, Callable[[list[str]], bool]] = {
     "openssl": check_openssl,
     "sed": check_sed,
     "sort": check_sort,
+}
+
+# Compound command checks (multi-token prefix -> validator)
+COMPOUND_CHECKS: dict[tuple[str, ...], Callable[[list[str]], bool]] = {
+    ("gh", "api"): check_gh_api,
 }
 
 # === Wrapper stripping ===
@@ -421,6 +470,10 @@ def is_command_safe(tokens: list[str]) -> bool:
 
     if cmd in CUSTOM_CHECKS:
         return CUSTOM_CHECKS[cmd](tokens)
+
+    for prefix, checker in COMPOUND_CHECKS.items():
+        if tuple(tokens[:len(prefix)]) == prefix:
+            return checker(tokens)
 
     cmd = CLI_ALIASES.get(cmd, cmd)
 
