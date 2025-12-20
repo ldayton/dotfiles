@@ -398,6 +398,9 @@ def is_command_safe(tokens: list[str]) -> bool:
     if not tokens:
         return False
 
+    if "--help" in tokens:
+        return True
+
     cmd = tokens[0]
     args = tokens[1:]
 

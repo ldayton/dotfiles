@@ -212,6 +212,16 @@ TESTS = [
     ("python --version-info", False),
     ("pre-commit-hook", False),
 
+    # --help makes any command safe
+    ("gh api --help", True),
+    ("gh api repos --help", True),
+    ("aws s3 rm --help", True),
+    ("kubectl delete --help", True),
+    ("docker run --help", True),
+    ("git push --help", True),
+    ("unknown-command --help", True),
+    ("./mystery-script.sh --help", True),
+
     # Git with -C flag
     ("git -C /some/path status", True),
     ("git -C /some/path log --oneline -5", True),
