@@ -21,7 +21,7 @@ import bashlex
 
 SAFE_COMMANDS = {
     "ack", "arch", "base32", "base64", "basenc", "basename", "cat", "cd",
-    "cloc", "comm", "cut", "date", "df", "diff", "dig", "dir", "dirname",
+    "cloc", "col", "comm", "cut", "date", "df", "diff", "dig", "dir", "dirname",
     "du", "echo", "env", "false", "fd", "file", "free", "getent", "grep",
     "groups", "head", "host", "hostid", "hostname", "id", "join", "jq",
     "logname", "ls", "lsof", "mkdir", "netstat", "nproc", "nslookup", "paste",
@@ -76,8 +76,9 @@ WRAPPERS = {
 #   "variable_depth": action depth varies by service (see action_depth, service_depths)
 CLI_CONFIGS = {
     "aws": {
-        "safe_actions": {"filter-log-events", "lookup-events", "ls", "tail", "wait"},
-        "safe_prefixes": ("batch-get-", "describe-", "get-", "head-", "list-"),
+        "safe_actions": {"filter-log-events", "help", "lookup-events", "ls",
+                         "query", "scan", "tail", "transact-get-items", "wait"},
+        "safe_prefixes": ("batch-get-", "describe-", "get-", "head-", "list-", "validate-"),
         "parser": "aws",
     },
     "az": {
@@ -390,6 +391,9 @@ def _get_aws_action(tokens: list[str]) -> str | None:
             i += 1
         else:
             break
+    # "aws help" - help is the first token
+    if i < len(tokens) and tokens[i] == "help":
+        return "help"
     if i + 1 < len(tokens):
         return tokens[i + 1]
     return None

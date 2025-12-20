@@ -22,6 +22,9 @@ spec.loader.exec_module(custom_perms)
 # (command, expected_approved_by_hook)
 TESTS = [
     # CLI tools - safe
+    ("aws help", True),
+    ("aws s3 help", True),
+    ("aws ec2 help", True),
     ("aws s3 ls", True),
     ("aws ec2 describe-instances", True),
     ("aws --profile prod ec2 describe-instances", True),
@@ -33,6 +36,10 @@ TESTS = [
     ("aws logs filter-log-events --log-group-name test", True),
     ("aws cloudtrail lookup-events", True),
     ("aws dynamodb batch-get-item --request-items file://items.json", True),
+    ("aws dynamodb query --table-name mytable", True),
+    ("aws dynamodb scan --table-name mytable", True),
+    ("aws dynamodb transact-get-items --transact-items file://items.json", True),
+    ("aws cloudformation validate-template --template-body file://t.yaml", True),
     ("git status", True),
     ("git log", True),
     ("kubectl get pods", True),
