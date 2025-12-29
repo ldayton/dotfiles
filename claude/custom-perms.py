@@ -136,6 +136,11 @@ CLI_CONFIGS = {
         "safe_prefixes": (),
         "parser": "first_token",
     },
+    "ruff": {
+        "safe_actions": {"check", "format"},
+        "safe_prefixes": (),
+        "parser": "first_token",
+    },
 }
 
 CLI_ALIASES = {

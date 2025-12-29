@@ -144,6 +144,12 @@ TESTS = [
     ("uv run cdk deploy", False),
     ("uv run rm foo", False),
     ("uv sync", False),  # not 'uv run', don't unwrap
+    ("uv run ruff check --fix && uv run ruff format", True),
+    ("uv run ruff check", True),
+    ("uv run ruff format", True),
+    ("ruff check --fix", True),
+    ("ruff format .", True),
+    ("ruff clean", False),  # not in safe actions
 
     # Complex chains with wrappers
     ("time git status && git log", True),
