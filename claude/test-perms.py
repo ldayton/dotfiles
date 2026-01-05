@@ -352,6 +352,90 @@ TESTS = [
     ("dmesg --clear", False),
     ("ping google.com", True),
     ("ping -c 4 google.com", True),
+
+    # Auth0 CLI - safe (read-only actions)
+    ("auth0 apps list", True),
+    ("auth0 apps show app123", True),
+    ("auth0 users search", True),
+    ("auth0 users search-by-email", True),
+    ("auth0 users show user123", True),
+    ("auth0 logs list", True),
+    ("auth0 logs tail", True),
+    ("auth0 actions list", True),
+    ("auth0 actions show action123", True),
+    ("auth0 actions diff", True),
+    ("auth0 roles list", True),
+    ("auth0 orgs list", True),
+    ("auth0 apis list", True),
+    ("auth0 domains list", True),
+    ("auth0 tenants list", True),
+    ("auth0 event-streams stats", True),
+    ("auth0 --tenant foo.auth0.com apps list", True),
+    ("auth0 --tenant foo.auth0.com users show user123", True),
+
+    # Auth0 CLI - unsafe (mutations)
+    ("auth0 apps create", False),
+    ("auth0 apps update app123", False),
+    ("auth0 apps delete app123", False),
+    ("auth0 users create", False),
+    ("auth0 users update user123", False),
+    ("auth0 users delete user123", False),
+    ("auth0 actions deploy", False),
+    ("auth0 roles create", False),
+    ("auth0 orgs create", False),
+    ("auth0 --tenant foo.auth0.com apps create", False),
+
+    # Auth0 api - safe (GET requests)
+    ("auth0 api tenants/settings", True),
+    ("auth0 api get tenants/settings", True),
+    ("auth0 api get clients", True),
+    ("auth0 api users", True),
+
+    # Auth0 api - unsafe (mutations)
+    ("auth0 api post clients", False),
+    ("auth0 api put clients/123", False),
+    ("auth0 api patch clients/123", False),
+    ("auth0 api delete clients/123", False),
+    ("auth0 api clients -d '{}'", False),
+    ("auth0 api clients --data '{}'", False),
+
+    # Shell -c wrappers - safe inner commands
+    ("bash -c 'echo hello'", True),
+    ("bash -c 'ls -la'", True),
+    ("bash -c 'git status'", True),
+    ("bash -c 'echo foo && ls'", True),
+    ("sh -c 'cat file.txt'", True),
+    ("sh -c 'grep pattern file'", True),
+    ("zsh -c 'pwd'", True),
+    ("zsh -c 'git log --oneline'", True),
+    ('bash -c "echo hello"', True),
+    ('bash -c "aws s3 ls"', True),
+
+    # Shell -c wrappers - unsafe inner commands
+    ("bash -c 'rm -rf /'", False),
+    ("bash -c 'git push'", False),
+    ("bash -c 'echo foo && rm bar'", False),
+    ("sh -c 'aws s3 rm s3://bucket/key'", False),
+    ("zsh -c 'kubectl delete pod foo'", False),
+    ('bash -c "rm file"', False),
+
+    # Shell -c edge cases
+    ("bash -c", False),  # missing command
+    ("bash -x -c 'echo'", True),  # other flags before -c
+    ("bash script.sh", False),  # no -c flag, not safe
+
+    # Shell combined flags (-lc, -xc, -cl, etc.)
+    ("bash -lc 'echo hello'", True),
+    ("bash -xc 'git status'", True),
+    ("bash -ilc 'ls -la'", True),
+    ("zsh -ilc 'pwd'", True),
+    ("sh -lc 'cat file'", True),
+    ("bash -lc 'rm foo'", False),
+    ("bash -xc 'git push'", False),
+    ("bash -cl 'echo hello'", True),  # -c not at end
+    ("bash -cxl 'ls'", True),  # -c at start
+    ("sh -cl 'git status'", True),
+    ("bash -cl 'rm foo'", False)
 ]
 
 

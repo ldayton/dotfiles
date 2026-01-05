@@ -20,7 +20,7 @@ import bashlex
 # === Data: What commands are safe ===
 
 SAFE_COMMANDS = {
-    "ack", "arch", "base32", "base64", "basenc", "basename", "cat", "cd",
+    "ack", "arch", "aws-azure-login", "base32", "base64", "basenc", "basename", "cat", "cd",
     "cloc", "col", "comm", "cut", "date", "df", "diff", "dig", "dir", "dirname",
     "du", "echo", "env", "false", "fd", "file", "free", "getent", "grep",
     "groups", "head", "host", "hostid", "hostname", "id", "join", "jq",
@@ -108,6 +108,12 @@ CLI_CONFIGS = {
         "safe_prefixes": (),
         "parser": "first_token",
         "flags_with_arg": {"-c", "--config", "--context", "-H", "--host", "-l", "--log-level"},
+    },
+    "auth0": {
+        "safe_actions": {"diff", "list", "search", "search-by-email", "show", "stats", "tail"},
+        "safe_prefixes": (),
+        "parser": "second_token",
+        "flags_with_arg": {"--tenant"},
     },
     "brew": {
         "safe_actions": {"config", "deps", "desc", "doctor", "info", "leaves", "list", "options", "outdated", "search", "uses"},
@@ -273,6 +279,40 @@ def check_curl(tokens: list[str]) -> bool:
     return True
 
 
+def check_shell_c(tokens: list[str]) -> bool:
+    """Approve bash/sh/zsh -c if the inner command is safe."""
+    # tokens: ['bash', '-c', 'echo hello'] or ['bash', '-lc', 'echo hello']
+    # Find -c flag (standalone or combined like -lc, -cl, -xcl, etc.)
+    c_idx = None
+    for i, tok in enumerate(tokens):
+        if tok.startswith("-") and not tok.startswith("--") and "c" in tok:
+            c_idx = i
+            break
+    if c_idx is None:
+        return False
+    if c_idx + 1 >= len(tokens):
+        return False
+    inner_cmd = tokens[c_idx + 1]
+    inner_commands = parse_commands(inner_cmd)
+    if inner_commands is None:
+        return False
+    if not inner_commands:
+        return False
+    return all(is_command_safe(cmd) for cmd in inner_commands)
+
+
+def check_auth0_api(tokens: list[str]) -> bool:
+    """Approve auth0 api if it's a GET request (no mutation method or data flags)."""
+    # tokens: ['auth0', 'api', 'get', 'path'] or ['auth0', 'api', 'path'] (defaults to GET)
+    args = tokens[2:]
+    for arg in args:
+        if arg in {"post", "put", "patch", "delete"}:
+            return False
+        if arg in {"-d", "--data"}:
+            return False
+    return True
+
+
 def check_gh_api(tokens: list[str]) -> bool:
     """Approve gh api if it's a GET request (no mutation flags)."""
     # tokens[0] is 'gh', tokens[1] is 'api'
@@ -319,6 +359,7 @@ def check_gh_api(tokens: list[str]) -> bool:
 
 CUSTOM_CHECKS: dict[str, Callable[[list[str]], bool]] = {
     "awk": check_awk,
+    "bash": check_shell_c,
     "curl": check_curl,
     "dmesg": check_dmesg,
     "find": check_find,
@@ -327,11 +368,14 @@ CUSTOM_CHECKS: dict[str, Callable[[list[str]], bool]] = {
     "journalctl": check_journalctl,
     "openssl": check_openssl,
     "sed": check_sed,
+    "sh": check_shell_c,
     "sort": check_sort,
+    "zsh": check_shell_c,
 }
 
 # Compound command checks (multi-token prefix -> validator)
 COMPOUND_CHECKS: dict[tuple[str, ...], Callable[[list[str]], bool]] = {
+    ("auth0", "api"): check_auth0_api,
     ("gh", "api"): check_gh_api,
 }
 
