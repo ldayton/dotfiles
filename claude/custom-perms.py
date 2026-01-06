@@ -101,6 +101,7 @@ CLI_CONFIGS = {
         "subservice_depths": {
             ("acr", "repository"): 2,     # az acr repository list
             ("boards", "iteration"): 3,   # az boards iteration team list
+            ("containerapp", "logs"): 2,  # az containerapp logs show
             ("containerapp", "revision"): 2,  # az containerapp revision list
             ("deployment", "operation"): 3,  # az deployment operation group list
         },

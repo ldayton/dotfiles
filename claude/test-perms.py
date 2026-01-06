@@ -349,6 +349,7 @@ TESTS = [
     ("az containerapp show --name myapp --resource-group rg", True),
     ("az containerapp list --resource-group rg", True),
     ("az containerapp revision list --name myapp --resource-group rg", True),
+    ("az containerapp logs show --name myapp --resource-group rg --type console", True),
     ("az containerapp delete --name myapp --resource-group rg", False),
     ("az acr repository list --name myacr", True),
     ("az acr repository show-tags --name myacr --repository myrepo", True),
