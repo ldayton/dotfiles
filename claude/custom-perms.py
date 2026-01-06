@@ -82,19 +82,56 @@ CLI_CONFIGS = {
         "parser": "aws",
     },
     "az": {
-        "safe_actions": {"list", "show", "get", "export"},
-        "safe_prefixes": ("get-", "list-"),
+        "safe_actions": {"list", "show", "get", "export", "query"},
+        "safe_prefixes": ("get-", "list-", "show-"),
         "parser": "variable_depth",
         "action_depth": 1,
-        "service_depths": {"storage": 2, "keyvault": 2, "network": 2},
+        "service_depths": {
+            "boards": 2,          # az boards work-item show
+            "cognitiveservices": 2,  # az cognitiveservices model list
+            "deployment": 2,      # az deployment group show
+            "devops": 2,          # az devops team list
+            "keyvault": 2,        # az keyvault secret list
+            "monitor": 2,         # az monitor log-analytics query
+            "network": 2,
+            "role": 2,            # az role assignment list
+            "storage": 2,
+        },
+        # Subgroups that need different depths
+        "subservice_depths": {
+            ("acr", "repository"): 2,     # az acr repository list
+            ("boards", "iteration"): 3,   # az boards iteration team list
+            ("containerapp", "revision"): 2,  # az containerapp revision list
+            ("deployment", "operation"): 3,  # az deployment operation group list
+        },
         "flags_with_arg": {"-g", "-o", "--output", "--query", "--resource-group", "--subscription"},
     },
     "gcloud": {
-        "safe_actions": {"list", "describe", "get", "get-iam-policy", "export"},
+        "safe_actions": {"list", "describe", "get", "get-iam-policy", "export", "get-value"},
         "safe_prefixes": ("get-", "list-", "describe-"),
         "parser": "variable_depth",
         "action_depth": 2,
-        "service_depths": {"auth": 1, "config": 1, "projects": 1, "components": 1, "topic": 1},
+        "service_depths": {
+            "artifacts": 3,       # gcloud artifacts docker images list
+            "auth": 1,            # gcloud auth list
+            "beta": 3,            # gcloud beta run services describe
+            "certificate-manager": 2,  # gcloud certificate-manager trust-configs describe
+            "components": 1,
+            "compute": 2,         # gcloud compute backend-services list
+            "config": 1,          # gcloud config get-value
+            "container": 2,       # gcloud container images list-tags
+            "dns": 2,             # gcloud dns record-sets list
+            "functions": 1,       # gcloud functions list
+            "iam": 2,             # gcloud iam service-accounts list
+            "iap": 2,             # gcloud iap web get-iam-policy
+            "logging": 1,         # gcloud logging read
+            "network-security": 2,  # gcloud network-security server-tls-policies describe
+            "projects": 1,        # gcloud projects list/describe
+            "run": 2,             # gcloud run services describe
+            "secrets": 1,         # gcloud secrets list
+            "storage": 2,         # gcloud storage buckets describe
+            "topic": 1,
+        },
         "flags_with_arg": {"--account", "--configuration", "--format", "--project", "--region", "--zone"},
     },
     "gh": {
@@ -461,6 +498,7 @@ def _get_variable_depth_action(tokens: list[str], config: dict[str, Any]) -> str
     flags_with_arg = config.get("flags_with_arg", set())
     default_depth = config.get("action_depth", 1)
     service_depths = config.get("service_depths", {})
+    subservice_depths = config.get("subservice_depths", {})
 
     i = skip_flags(tokens, flags_with_arg)
     if i >= len(tokens):
@@ -468,6 +506,13 @@ def _get_variable_depth_action(tokens: list[str], config: dict[str, Any]) -> str
 
     service = tokens[i]
     depth = service_depths.get(service, default_depth)
+
+    # Check for subservice override (e.g., "boards iteration" -> depth 3)
+    if i + 1 < len(tokens):
+        subservice = tokens[i + 1]
+        subservice_key = (service, subservice)
+        if subservice_key in subservice_depths:
+            depth = subservice_depths[subservice_key]
 
     target_idx = i + depth
     if target_idx < len(tokens):

@@ -285,6 +285,36 @@ TESTS = [
     ("gcloud compute instances create foo", False),
     ("gcloud container clusters get-credentials foo", True),  # get- prefix
 
+    # Gcloud nested services (variable depth)
+    ("gcloud run services list", True),
+    ("gcloud run services describe myservice --region us-central1", True),
+    ("gcloud run services update myservice --region us-central1", False),
+    ("gcloud run services delete myservice", False),
+    ("gcloud compute backend-services list --project foo", True),
+    ("gcloud compute ssl-certificates describe mycert --global", True),
+    ("gcloud iap web get-iam-policy --resource-type=backend-services", True),
+    ("gcloud artifacts docker images list us-central1-docker.pkg.dev/proj/repo", True),
+    ("gcloud iam service-accounts list", True),
+    ("gcloud iam service-accounts delete sa@proj.iam.gserviceaccount.com", False),
+    ("gcloud secrets list --project foo", True),
+    ("gcloud secrets describe mysecret", True),
+    ("gcloud secrets create newsecret", False),
+    ("gcloud dns record-sets list --zone myzone", True),
+    ("gcloud functions list --project foo", True),
+    ("gcloud config get-value project", True),
+    ("gcloud config set project foo", False),
+    ("gcloud logging read 'resource.type=cloud_run_revision'", False),  # read is not in safe_actions
+    ("gcloud storage buckets describe gs://mybucket", True),
+    ("gcloud beta run services describe myservice", True),
+    ("gcloud beta run services update myservice", False),
+    ("gcloud certificate-manager trust-configs describe myconfig", True),
+    ("gcloud network-security server-tls-policies describe mypolicy", True),
+    ("gcloud container images list-tags gcr.io/proj/image", True),
+    ("gcloud projects list", True),
+    ("gcloud projects describe myproject", True),
+    ("gcloud projects get-iam-policy myproject", True),
+    ("gcloud projects add-iam-policy-binding myproject --member=user:foo", False),
+
     # Az with global flags (values could match action names)
     ("az --subscription delete vm list", True),
     ("az --query delete vm show", True),
@@ -300,6 +330,41 @@ TESTS = [
     ("az vm delete list", False),  # deleting vm named "list"
     ("az vm create myvm --resource-group mygroup", False),
     ("az vm start myvm", False),
+
+    # Az nested services (variable depth)
+    ("az boards work-item show --id 12345", True),
+    ("az boards work-item list --project myproj", True),
+    ("az boards work-item create --type Bug", False),
+    ("az boards work-item update --id 12345", False),
+    ("az boards iteration team list --team MyTeam", True),
+    ("az deployment group show --resource-group rg --name main", True),
+    ("az deployment group list --resource-group rg", True),
+    ("az deployment group create --resource-group rg --template-file t.bicep", False),
+    ("az deployment operation group list --resource-group rg --name main", True),
+    ("az devops team list --project myproj", True),
+    ("az devops team list-member --team MyTeam", True),
+    ("az cognitiveservices model list --location eastus", True),
+    ("az cognitiveservices account list", True),
+    ("az cognitiveservices account create --name foo", False),
+    ("az containerapp show --name myapp --resource-group rg", True),
+    ("az containerapp list --resource-group rg", True),
+    ("az containerapp revision list --name myapp --resource-group rg", True),
+    ("az containerapp delete --name myapp --resource-group rg", False),
+    ("az acr repository list --name myacr", True),
+    ("az acr repository show-tags --name myacr --repository myrepo", True),
+    ("az acr repository delete --name myacr --repository myrepo", False),
+    ("az monitor log-analytics query --workspace ws --analytics-query q", True),
+    ("az monitor activity-log list", True),
+    ("az resource list --resource-group rg", True),
+    ("az resource show --ids /subscriptions/.../resource", True),
+    ("az resource delete --ids /subscriptions/.../resource", False),
+
+    # Az role (RBAC)
+    ("az role assignment list", True),
+    ("az role assignment list --assignee user@example.com", True),
+    ("az role definition list", True),
+    ("az role assignment create --assignee user@example.com --role Reader", False),
+    ("az role assignment delete --assignee user@example.com --role Reader", False),
 
     # Kubectl with global flags (values could match action names)
     ("kubectl --context delete get pods", True),
