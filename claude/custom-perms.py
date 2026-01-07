@@ -9,6 +9,7 @@
 """Claude Code PreToolUse hook for auto-approving safe bash commands.
 
 Install: chmod +x && ln -s $(pwd)/custom-perms.py ~/.local/bin/
+Tests: ./test-perms.py (run after any changes)
 
 This hook runs before Claude executes any Bash tool call. It parses the command
 using bashlex (bash AST parser) and checks if all commands are "safe" - meaning
@@ -137,6 +138,9 @@ WRAPPERS = {
 
 # === Data: CLI configurations ===
 
+# Common read-only actions shared across most CLI tools
+COMMON_SAFE_ACTIONS = {"describe", "diff", "export", "get", "help", "info", "list", "logs", "search", "show", "status", "version", "view"}
+
 # CLI tools with action-based checks
 # parser types:
 #   "aws": action is second token (aws <service> <action>)
@@ -145,13 +149,12 @@ WRAPPERS = {
 #   "variable_depth": action depth varies by service (see action_depth, service_depths)
 CLI_CONFIGS = {
     "aws": {
-        "safe_actions": {"filter-log-events", "help", "lookup-events", "ls",
-                         "query", "scan", "tail", "transact-get-items", "wait"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"filter-log-events", "lookup-events", "ls", "query", "scan", "tail", "transact-get-items", "wait"},
         "safe_prefixes": ("batch-get-", "describe-", "get-", "head-", "list-", "validate-"),
         "parser": "aws",
     },
     "az": {
-        "safe_actions": {"list", "show", "get", "export", "query"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"query"},
         "safe_prefixes": ("get-", "list-", "show-"),
         "parser": "variable_depth",
         "action_depth": 1,
@@ -179,7 +182,7 @@ CLI_CONFIGS = {
         "flags_with_arg": {"-g", "-o", "--output", "--query", "--resource-group", "--subscription"},
     },
     "gcloud": {
-        "safe_actions": {"list", "describe", "get", "get-iam-policy", "export", "get-value"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"get-iam-policy", "get-value"},
         "safe_prefixes": ("get-", "list-", "describe-"),
         "parser": "variable_depth",
         "action_depth": 2,
@@ -207,52 +210,52 @@ CLI_CONFIGS = {
         "flags_with_arg": {"--account", "--configuration", "--format", "--project", "--region", "--zone"},
     },
     "gh": {
-        "safe_actions": {"checks", "diff", "list", "search", "status", "view"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"checks"},
         "safe_prefixes": (),
         "parser": "second_token",
         "flags_with_arg": {"-R", "--repo"},
     },
     "docker": {
-        "safe_actions": {"diff", "events", "history", "images", "inspect", "logs", "port", "ps", "stats", "top"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"events", "history", "images", "inspect", "port", "ps", "stats", "top"},
         "safe_prefixes": (),
         "parser": "first_token",
         "flags_with_arg": {"-c", "--config", "--context", "-H", "--host", "-l", "--log-level"},
     },
     "auth0": {
-        "safe_actions": {"diff", "list", "search", "search-by-email", "show", "stats", "tail"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"search-by-email", "stats", "tail"},
         "safe_prefixes": (),
         "parser": "second_token",
         "flags_with_arg": {"--tenant"},
     },
     "brew": {
-        "safe_actions": {"config", "deps", "desc", "doctor", "info", "leaves", "list", "options", "outdated", "search", "uses"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"config", "deps", "desc", "doctor", "leaves", "options", "outdated", "uses"},
         "safe_prefixes": (),
         "parser": "first_token",
     },
     "git": {
-        "safe_actions": {"blame", "cat-file", "check-ignore", "cherry", "describe", "diff", "fetch", "for-each-ref", "grep", "log", "ls-files", "ls-tree", "merge-base", "name-rev", "reflog", "rev-list", "rev-parse", "shortlog", "show", "status"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"blame", "cat-file", "check-ignore", "cherry", "fetch", "for-each-ref", "grep", "log", "ls-files", "ls-tree", "merge-base", "name-rev", "reflog", "rev-list", "rev-parse", "shortlog"},
         "safe_prefixes": (),
         "parser": "first_token",
         "flags_with_arg": {"-C", "-c", "--git-dir", "--work-tree"},
     },
     "kubectl": {
-        "safe_actions": {"api-resources", "api-versions", "cluster-info", "describe", "explain", "get", "logs", "top", "version"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"api-resources", "api-versions", "cluster-info", "explain", "top"},
         "safe_prefixes": (),
         "parser": "first_token",
         "flags_with_arg": {"-n", "--namespace", "--context", "--cluster", "--kubeconfig", "-o", "--output"},
     },
     "cdk": {
-        "safe_actions": {"diff", "doctor", "docs", "list", "ls", "metadata", "notices", "synth"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"doctor", "docs", "ls", "metadata", "notices", "synth"},
         "safe_prefixes": (),
         "parser": "first_token",
     },
     "pre-commit": {
-        "safe_actions": {"help", "run", "sample-config", "validate-config", "validate-manifest"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"run", "sample-config", "validate-config", "validate-manifest"},
         "safe_prefixes": (),
         "parser": "first_token",
     },
     "ruff": {
-        "safe_actions": {"check", "format"},
+        "safe_actions": COMMON_SAFE_ACTIONS | {"check", "format"},
         "safe_prefixes": (),
         "parser": "first_token",
     },
@@ -640,6 +643,54 @@ def get_cli_action(tokens: list[str], parser: str, config: dict[str, Any] | None
     return PARSERS[parser](tokens, config)
 
 
+def get_command_description(tokens: list[str]) -> str:
+    """Get a human-readable description of a command for error messages."""
+    if not tokens:
+        return "empty command"
+    tokens = strip_wrappers(tokens)
+    if not tokens:
+        return "empty command"
+    cmd = CLI_ALIASES.get(tokens[0], tokens[0])
+    if cmd == "aws" and len(tokens) >= 3:
+        # aws <service> <action> - skip global flags
+        args = tokens[1:]
+        i = 0
+        while i < len(args):
+            if args[i] in AWS_FLAGS_WITH_ARG:
+                i += 2
+            elif args[i].startswith("--"):
+                i += 1
+            else:
+                break
+        if i + 1 < len(args):
+            return f"aws {args[i]} {args[i + 1]}"
+    if cmd in CLI_CONFIGS:
+        config = CLI_CONFIGS[cmd]
+        action = get_cli_action(tokens[1:], config["parser"], config)
+        if action:
+            # For variable_depth parsers, include service hierarchy
+            if config["parser"] == "variable_depth":
+                flags_with_arg = config.get("flags_with_arg", set())
+                i = skip_flags(tokens[1:], flags_with_arg)
+                parts = [cmd]
+                for j in range(i, len(tokens) - 1):
+                    tok = tokens[1 + j]
+                    if tok.startswith("-"):
+                        break
+                    parts.append(tok)
+                    if tok == action:
+                        break
+                return " ".join(parts)
+            # For second_token parsers (gh, auth0), show cmd subcommand action
+            if config["parser"] == "second_token":
+                flags_with_arg = config.get("flags_with_arg", set())
+                i = skip_flags(tokens[1:], flags_with_arg)
+                if i + 1 < len(tokens) - 1:
+                    return f"{cmd} {tokens[1 + i]} {tokens[2 + i]}"
+            return f"{cmd} {action}"
+    return tokens[0]
+
+
 # === Core safety check ===
 
 
@@ -802,8 +853,9 @@ def main() -> None:
 
     for cmd_tokens in commands:
         if not is_command_safe(cmd_tokens):
+            desc = get_command_description(cmd_tokens)
             log.info("deferred", command=command, reason="unsafe_command", failed_tokens=cmd_tokens)
-            defer_to_user(f"Command requires approval: {cmd_tokens[0]}")
+            defer_to_user(f"Command requires approval: {desc}")
 
     log.info("approved", command=command)
     print(json.dumps({

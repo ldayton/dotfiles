@@ -569,6 +569,58 @@ TESTS = [
 ]
 
 
+DESCRIPTION_TESTS = [
+    # AWS
+    (["aws", "cloudformation", "delete-stack", "--stack-name", "foo"], "aws cloudformation delete-stack"),
+    (["aws", "--profile", "prod", "s3", "rm", "s3://bucket"], "aws s3 rm"),
+    (["aws", "s3", "rm"], "aws s3 rm"),
+    (["aws", "--profile", "prod", "--region", "us-east-1", "ec2", "terminate-instances"], "aws ec2 terminate-instances"),
+    (["aws"], "aws"),  # incomplete
+    (["aws", "help"], "aws help"),  # help is service, no action
+    (["aws", "--profile", "prod"], "aws"),  # only flags, no service/action
+    # Az (variable_depth)
+    (["az", "vm", "delete", "myvm"], "az vm delete"),
+    (["az", "boards", "work-item", "create"], "az boards work-item create"),
+    (["az", "cognitiveservices", "account", "deployment", "create"], "az cognitiveservices account deployment create"),
+    (["az", "--subscription", "mysub", "vm", "delete", "foo"], "az vm delete"),
+    (["az"], "az"),  # incomplete
+    # Gcloud (variable_depth)
+    (["gcloud", "compute", "instances", "delete", "foo"], "gcloud compute instances delete"),
+    (["gcloud", "run", "services", "update", "myservice"], "gcloud run services update"),
+    (["gcloud", "--project", "myproj", "compute", "instances", "create", "foo"], "gcloud compute instances create"),
+    # Kubectl (first_token)
+    (["kubectl", "delete", "pod", "foo"], "kubectl delete"),
+    (["kubectl", "--context", "mycluster", "delete", "pod", "foo"], "kubectl delete"),
+    (["kubeat", "delete", "pod", "foo"], "kubectl delete"),  # alias
+    (["kubeci", "apply", "-f", "foo.yaml"], "kubectl apply"),  # alias
+    # Gh (second_token)
+    (["gh", "pr", "create"], "gh pr create"),
+    (["gh", "issue", "list"], "gh issue list"),
+    (["gh", "-R", "foo/bar", "pr", "create"], "gh pr create"),
+    (["gh", "pr"], "gh"),  # missing action - fallback to cmd
+    # Git (first_token)
+    (["git", "push"], "git push"),
+    (["git", "-C", "/path", "push", "--force"], "git push"),
+    (["git", "status"], "git status"),
+    # Auth0 (second_token)
+    (["auth0", "apps", "create"], "auth0 apps create"),
+    (["auth0", "--tenant", "foo", "users", "delete"], "auth0 users delete"),
+    # Docker (first_token)
+    (["docker", "run", "ubuntu"], "docker run"),
+    (["docker", "--host", "tcp://localhost", "run", "ubuntu"], "docker run"),
+    # Simple commands (no CLI config)
+    (["rm", "foo"], "rm"),
+    (["cp", "a", "b"], "cp"),
+    # Wrappers
+    (["time", "aws", "s3", "rm", "foo"], "aws s3 rm"),
+    (["uv", "run", "aws", "s3", "rm", "foo"], "aws s3 rm"),
+    (["time", "rm", "foo"], "rm"),
+    # Edge cases
+    ([], "empty command"),
+    (["time"], "empty command"),  # wrapper with nothing after
+]
+
+
 def test_command(cmd, expected_safe):
     """Test a command directly using the module's functions."""
     commands = custom_perms.parse_commands(cmd)
@@ -584,6 +636,15 @@ def test_command(cmd, expected_safe):
 def main():
     passed = 0
     failed = 0
+
+    for tokens, expected_desc in DESCRIPTION_TESTS:
+        result = custom_perms.get_command_description(tokens)
+        ok = result == expected_desc
+        if ok:
+            passed += 1
+        else:
+            failed += 1
+            print(f"✗ get_command_description({tokens[:3]}...) = {result!r} (expected {expected_desc!r})")
 
     for cmd, expected_safe in TESTS:
         ok = test_command(cmd, expected_safe)
