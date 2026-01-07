@@ -3,19 +3,87 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #   "bashlex",
+#   "structlog",
 # ]
 # ///
-"""Hook to auto-approve read-only CLI commands using bash AST parsing."""
+"""Claude Code PreToolUse hook for auto-approving safe bash commands.
+
+Install: chmod +x && ln -s $(pwd)/custom-perms.py ~/.local/bin/
+
+This hook runs before Claude executes any Bash tool call. It parses the command
+using bashlex (bash AST parser) and checks if all commands are "safe" - meaning
+read-only operations that don't modify the filesystem, network state, or system
+configuration.
+
+Design assumptions:
+- Commands come from Claude, which is well-intentioned and follows instructions.
+  This is NOT a security sandbox for adversarial input.
+- The goal is to reduce approval friction for common read-only operations while
+  still prompting for potentially destructive commands.
+- When in doubt, defer to user approval (fail open to "ask", not "allow").
+
+Hook behavior:
+- Safe commands: auto-approved with permissionDecision="allow"
+- Unsafe commands: deferred to user with permissionDecision="ask"
+- Parse failures or redirects: deferred to user (conservative)
+
+All decisions are logged to ~/.claude/hook-approvals.log for auditing.
+
+PreToolUse hook response options (via hookSpecificOutput JSON):
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ permissionDecision  │ Behavior                                               │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ "allow"             │ Auto-approve, skip user prompt. Reason shown to user.  │
+│ "deny"              │ Block tool call. Reason shown to Claude for feedback.  │
+│ "ask"               │ Prompt user for approval. Reason shown to user.        │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ (no JSON output)    │ Equivalent to "allow" - command proceeds silently.     │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+
+Exit codes:
+- 0: Success. JSON in stdout is parsed for decision.
+- 2: Blocking error. stderr shown to Claude. JSON ignored.
+- Other: Non-blocking error. stderr shown in verbose mode. Continues.
+
+Optional fields: updatedInput (modify params), systemMessage (user warning),
+continue (false halts Claude entirely, takes precedence over permissionDecision),
+suppressOutput (hide from verbose).
+"""
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import json
+import logging
 import os
 import re
 import sys
 
 import bashlex
+import structlog
+
+LOG_FILE = Path.home() / ".claude" / "hook-approvals.log"
+
+
+def setup_logging():
+    """Configure structlog to write JSON to log file."""
+    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    file_handler = logging.FileHandler(LOG_FILE)
+    file_handler.setLevel(logging.INFO)
+    logging.basicConfig(format="%(message)s", handlers=[file_handler], level=logging.INFO)
+    structlog.configure(
+        processors=[
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.processors.add_log_level,
+            structlog.processors.JSONRenderer(),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+        logger_factory=structlog.PrintLoggerFactory(file=file_handler.stream),
+    )
+
+
+log = None
 
 # === Data: What commands are safe ===
 
@@ -695,25 +763,51 @@ def parse_commands(cmd_string: str) -> list[list[str]] | None:
 
 
 def main() -> None:
+    global log
+    setup_logging()
+    log = structlog.get_logger()
+
     input_data = json.load(sys.stdin)
     command = input_data.get("tool_input", {}).get("command", "")
 
-    if not command.strip():
+    def defer_to_user(reason: str) -> None:
+        """Print JSON to defer decision to user and exit."""
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "ask",
+                "permissionDecisionReason": f"⚠️  {reason}",
+            }
+        }))
         sys.exit(0)
+
+    if not command.strip():
+        log.info("deferred", command=command, reason="empty_command")
+        defer_to_user("Empty command")
 
     commands = parse_commands(command)
 
     if commands is None:
-        sys.exit(0)
+        log.info("deferred", command=command, reason="parse_failed_or_redirect")
+        defer_to_user("Could not parse command or contains output redirect")
 
     if not commands:
-        sys.exit(0)
+        log.info("deferred", command=command, reason="no_commands")
+        defer_to_user("No commands found")
 
     for cmd_tokens in commands:
         if not is_command_safe(cmd_tokens):
-            sys.exit(0)
+            log.info("deferred", command=command, reason="unsafe_command", failed_tokens=cmd_tokens)
+            defer_to_user(f"Command requires approval: {cmd_tokens[0]}")
 
-    print(json.dumps({"decision": "approve", "reason": "all commands safe"}))
+    log.info("approved", command=command)
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow",
+            "permissionDecisionReason": "all commands safe",
+        }
+    }))
     sys.exit(0)
 
 
