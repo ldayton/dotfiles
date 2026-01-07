@@ -11,7 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/lilydayton/source/Dippy/src/dippy/dippy.py"
+            "command": "~/source/Dippy/src/dippy/dippy.py"
           }
         ]
       }
