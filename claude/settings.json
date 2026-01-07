@@ -7,13 +7,13 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Bash",
         "hooks": [
           {
-            "command": "uv run $HOME/source/dotfiles/claude/custom-perms.py",
-            "type": "command"
+            "type": "command",
+            "command": "/home/lilydayton/source/Dippy/src/dippy/dippy.py"
           }
-        ],
-        "matcher": "Bash"
+        ]
       }
     ]
   },
