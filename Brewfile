@@ -27,6 +27,8 @@ brew "jq"          # lightweight JSON processor
 brew "watch"       # execute a command periodically
 
 # Cloud Tools
+tap "auth0/auth0-cli"
+brew "auth0"                  # Auth0 command-line interface
 brew "aws-cdk"                # AWS Cloud Development Kit for infrastructure as code
 brew "awscli"                 # official AWS command-line interface
 brew "awscurl"                # curl wrapper for AWS API calls with sigv4
