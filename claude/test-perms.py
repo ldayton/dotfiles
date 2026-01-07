@@ -59,6 +59,12 @@ TESTS = [
     ("aws --profile prod ec2 terminate-instances --instance-ids i-123", False),
     ("aws --region us-east-1 s3 rm s3://bucket/file", False),
     ("git push", False),
+    ("git commit -m 'message'", False),
+    ("git commit -m 'multiline\n\nmessage'", False),
+    ('git commit -m "line1\n\nline2: 110 → 45"', False),
+    # Heredoc commit messages (bashlex can't parse, but pattern-matched as safe)
+    ("git commit -m \"$(cat <<'EOF'\nmessage\nEOF\n)\"", False),  # commit is unsafe
+    ("git -C /path commit -m \"$(cat <<'EOF'\nmessage\nEOF\n)\"", False),
     ("git branch -D feature", False),
     ("git stash drop", False),
     ("git config --unset user.name", False),
@@ -144,8 +150,23 @@ TESTS = [
     ("uv run --quiet cdk diff", True),
     ("uv run cdk deploy", False),
     ("uv run rm foo", False),
-    ("uv sync", False),  # not 'uv run', don't unwrap
+    ("uv sync", True),
+    ("uv sync --all-groups", True),
+    ("uv lock", True),
+    ("uv add foo", False),
+    ("uv remove foo", False),
+    ("uv pip install foo", False),
+    ("uv version", True),
+    ("uv tree", True),
+    ("uv pip list", True),
+    ("uv pip show foo", True),
     ("uv run ruff check --fix && uv run ruff format", True),
+    ("uv run --project tools-base-mcp ruff check", True),
+    ("uv run --project tools-base-mcp ruff format", True),
+    ("uv run pytest", True),
+    ("uv run pytest -v tests/", True),
+    ("pytest", True),
+    ("pytest -xvs tests/test_foo.py", True),
     ("uv run ruff check", True),
     ("uv run ruff format", True),
     ("ruff check --fix", True),
@@ -608,6 +629,9 @@ DESCRIPTION_TESTS = [
     # Docker (first_token)
     (["docker", "run", "ubuntu"], "docker run"),
     (["docker", "--host", "tcp://localhost", "run", "ubuntu"], "docker run"),
+    # Uv
+    (["uv", "sync"], "uv sync"),
+    (["uv", "pip", "install", "foo"], "uv pip install"),
     # Simple commands (no CLI config)
     (["rm", "foo"], "rm"),
     (["cp", "a", "b"], "cp"),

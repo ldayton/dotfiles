@@ -10,6 +10,7 @@
 
 Install: chmod +x && ln -s $(pwd)/custom-perms.py ~/.local/bin/
 Tests: ./test-perms.py (run after any changes)
+Debug: ./bashlex-debug.py 'command' (inspect parse tree)
 
 This hook runs before Claude executes any Bash tool call. It parses the command
 using bashlex (bash AST parser) and checks if all commands are "safe" - meaning
@@ -95,7 +96,7 @@ SAFE_COMMANDS = {
     "du", "echo", "env", "false", "fd", "file", "free", "getent", "grep",
     "groups", "head", "host", "hostid", "hostname", "id", "join", "jq",
     "logname", "ls", "lsof", "mkdir", "netstat", "nproc", "nslookup", "paste",
-    "ping", "pinky", "printenv", "printf", "ps", "pwd", "readlink", "realpath",
+    "ping", "pinky", "printenv", "printf", "ps", "pwd", "pytest", "readlink", "realpath",
     "rg", "sleep", "ss", "stat", "tail", "traceroute", "tr", "tree", "true",
     "tsort", "tty", "type", "uname", "uniq", "uptime", "users", "vdir",
     "wc", "which", "who", "whoami", "yes",
@@ -124,16 +125,17 @@ PREFIX_COMMANDS = {
 }
 
 # Wrapper commands that just modify how the inner command runs
-# Value is (prefix_tokens, skip_count) where skip_count can be:
+# Value is (prefix_tokens, skip_count, flags_with_arg) where skip_count can be:
 #   int: skip that many args after prefix
 #   None: skip flags and VAR=val pairs
 #   "nice": skip -n N style flags
+# flags_with_arg is optional set of flags that consume the next token
 WRAPPERS = {
-    "time": (["time"], 0),
-    "nice": (["nice"], "nice"),
-    "timeout": (["timeout"], 1),
-    "env": (["env"], None),
-    "uv": (["uv", "run"], None),
+    "time": (["time"], 0, set()),
+    "nice": (["nice"], "nice", set()),
+    "timeout": (["timeout"], 1, set()),
+    "env": (["env"], None, set()),
+    "uv": (["uv", "run"], None, {"--project", "-p", "--package", "--with", "--python", "--no-project"}),
 }
 
 # === Data: CLI configurations ===
@@ -256,6 +258,11 @@ CLI_CONFIGS = {
     },
     "ruff": {
         "safe_actions": COMMON_SAFE_ACTIONS | {"check", "format"},
+        "safe_prefixes": (),
+        "parser": "first_token",
+    },
+    "uv": {
+        "safe_actions": COMMON_SAFE_ACTIONS | {"lock", "sync", "tree"},
         "safe_prefixes": (),
         "parser": "first_token",
     },
@@ -515,9 +522,19 @@ CUSTOM_CHECKS: dict[str, Callable[[list[str]], bool]] = {
 }
 
 # Compound command checks (multi-token prefix -> validator)
+def check_uv_pip(tokens: list[str]) -> bool:
+    """Approve uv pip if action is read-only."""
+    # tokens: ['uv', 'pip', 'list'] or ['uv', 'pip', 'show', 'pkg']
+    if len(tokens) < 3:
+        return False
+    action = tokens[2]
+    return action in {"list", "show", "tree", "check"}
+
+
 COMPOUND_CHECKS: dict[tuple[str, ...], Callable[[list[str]], bool]] = {
     ("auth0", "api"): check_auth0_api,
     ("gh", "api"): check_gh_api,
+    ("uv", "pip"): check_uv_pip,
 }
 
 # === Wrapper stripping ===
@@ -526,14 +543,16 @@ COMPOUND_CHECKS: dict[tuple[str, ...], Callable[[list[str]], bool]] = {
 def strip_wrappers(tokens: list[str]) -> list[str]:
     """Strip wrapper commands and return inner command tokens."""
     while tokens and tokens[0] in WRAPPERS:
-        prefix, skip = WRAPPERS[tokens[0]]
+        prefix, skip, flags_with_arg = WRAPPERS[tokens[0]]
         if tokens[:len(prefix)] != prefix:
             break
         tokens = tokens[len(prefix):]
 
         if skip is None:
             while tokens:
-                if tokens[0].startswith("-"):
+                if tokens[0] in flags_with_arg:
+                    tokens = tokens[2:]  # skip flag and its argument
+                elif tokens[0].startswith("-"):
                     tokens = tokens[1:]
                 elif "=" in tokens[0]:
                     tokens = tokens[1:]
@@ -664,6 +683,10 @@ def get_command_description(tokens: list[str]) -> str:
                 break
         if i + 1 < len(args):
             return f"aws {args[i]} {args[i + 1]}"
+    # Check compound commands first (e.g., uv pip install)
+    for prefix in COMPOUND_CHECKS:
+        if tuple(tokens[:len(prefix)]) == prefix and len(tokens) > len(prefix):
+            return " ".join(tokens[:len(prefix) + 1])
     if cmd in CLI_CONFIGS:
         config = CLI_CONFIGS[cmd]
         action = get_cli_action(tokens[1:], config["parser"], config)
@@ -796,6 +819,22 @@ def preprocess_command(cmd_string: str) -> str:
     return re.sub(r'\btime\s+(-p\s+)?', '', cmd_string)
 
 
+# Patterns that bashlex can't parse - extract command description for error message
+# Each pattern is (regex, command description)
+UNPARSEABLE_PATTERNS = [
+    # git commit with heredoc message - bashlex can't parse <<'EOF' inside $()
+    (re.compile(r"^git\s+(-C\s+\S+\s+)?commit\s+-m\s+\"\$\(cat\s+<<'?EOF'?"), "git commit"),
+]
+
+
+def get_unparseable_command_desc(cmd_string: str) -> str | None:
+    """Extract command description from unparseable command. Returns None if no match."""
+    for pattern, desc in UNPARSEABLE_PATTERNS:
+        if pattern.search(cmd_string):
+            return desc
+    return None
+
+
 def parse_commands(cmd_string: str) -> list[list[str]] | None:
     """Parse a bash command string and return list of commands.
 
@@ -844,6 +883,11 @@ def main() -> None:
     commands = parse_commands(command)
 
     if commands is None:
+        # Check if it matches a known unparseable pattern for better error message
+        desc = get_unparseable_command_desc(command)
+        if desc:
+            log.info("deferred", command=command, reason="unparseable_known_pattern", desc=desc)
+            defer_to_user(f"Command requires approval: {desc}")
         log.info("deferred", command=command, reason="parse_failed_or_redirect")
         defer_to_user("Could not parse command or contains output redirect")
 
