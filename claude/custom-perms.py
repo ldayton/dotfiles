@@ -63,7 +63,8 @@ import sys
 import bashlex
 import structlog
 
-LOG_FILE = Path.home() / ".claude" / "hook-approvals.log"
+HOME = Path.home()
+LOG_FILE = HOME / ".claude" / "hook-approvals.log"
 
 
 def setup_logging():
@@ -661,6 +662,10 @@ def is_command_safe(tokens: list[str]) -> bool:
         return True
 
     if os.path.basename(cmd) in SAFE_SCRIPTS:
+        return True
+
+    # Loom tool smoke tests
+    if re.match(rf'{re.escape(str(HOME))}/dev/Loom/tools/[^/]+/bin/smoke\.sh$', cmd):
         return True
 
     # Curl wrappers should be checked as curl

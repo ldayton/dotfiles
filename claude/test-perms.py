@@ -3,6 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #   "bashlex",
+#   "structlog",
 # ]
 # ///
 """Test cases for custom-perms.py"""
@@ -552,6 +553,13 @@ TESTS = [
     ("xargs", False),
     ("xargs -0", False),
     ("xargs -I {}", False),
+
+    # Loom tool smoke tests
+    (f"{Path.home()}/dev/Loom/tools/dopushgateway-mcp/bin/smoke.sh", True),
+    (f"{Path.home()}/dev/Loom/tools/dopushgateway-mcp/bin/smoke.sh --test", True),
+    (f"{Path.home()}/dev/Loom/tools/foo/bin/smoke.sh --prod", True),
+    ("/other/path/smoke.sh", False),
+    (f"{Path.home()}/dev/Loom/tools/foo/smoke.sh", False),  # not in bin/
 
     # xargs with shell -c (delegates to check_shell_c)
     ("xargs -I {} sh -c 'echo {}'", True),
