@@ -345,6 +345,11 @@ TESTS = [
     ("az devops team list-member --team MyTeam", True),
     ("az cognitiveservices model list --location eastus", True),
     ("az cognitiveservices account list", True),
+    ("az cognitiveservices account show --name myaccount --resource-group rg", True),
+    ("az cognitiveservices account deployment list --name myaccount --resource-group rg", True),
+    ("az cognitiveservices account deployment show --name myaccount --resource-group rg --deployment-name dep", True),
+    ("az cognitiveservices account deployment create --name myaccount --resource-group rg", False),
+    ("az cognitiveservices account deployment delete --name myaccount --resource-group rg", False),
     ("az cognitiveservices account create --name foo", False),
     ("az containerapp show --name myapp --resource-group rg", True),
     ("az containerapp list --resource-group rg", True),
@@ -366,6 +371,15 @@ TESTS = [
     ("az role definition list", True),
     ("az role assignment create --assignee user@example.com --role Reader", False),
     ("az role assignment delete --assignee user@example.com --role Reader", False),
+
+    # Az ML (Machine Learning)
+    ("az ml workspace list", True),
+    ("az ml workspace show --name myws --resource-group rg", True),
+    ("az ml model list --workspace-name myws --resource-group rg", True),
+    ("az ml endpoint list --workspace-name myws --resource-group rg", True),
+    ("az ml workspace create --name myws --resource-group rg", False),
+    ("az ml workspace delete --name myws --resource-group rg", False),
+    ("az ml model delete --name mymodel --workspace-name myws", False),
 
     # Kubectl with global flags (values could match action names)
     ("kubectl --context delete get pods", True),
@@ -501,7 +515,49 @@ TESTS = [
     ("bash -cl 'echo hello'", True),  # -c not at end
     ("bash -cxl 'ls'", True),  # -c at start
     ("sh -cl 'git status'", True),
-    ("bash -cl 'rm foo'", False)
+    ("bash -cl 'rm foo'", False),
+
+    # xargs - safe (inner command is safe)
+    ("xargs ls", True),
+    ("xargs cat", True),
+    ("xargs grep pattern", True),
+    ("xargs rg -l pattern", True),
+    ("find . -name '*.py' | xargs grep TODO", True),
+    ("fd -t f | xargs head -5", True),
+    ("xargs -0 cat", True),
+    ("xargs -I {} cat {}", True),
+    ("xargs -n 1 ls", True),
+    ("xargs -P 4 grep pattern", True),
+    ("xargs --null rg pattern", True),
+    ("xargs -d '\\n' cat", True),
+    ("xargs --delimiter='\\n' cat", True),
+    ("xargs -I {} -P 4 head -10 {}", True),
+    ("ls | xargs -I {} stat {}", True),
+    ("xargs -- cat", True),  # -- ends flag parsing
+    ("xargs -0 -- rg pattern", True),
+
+    # xargs - unsafe (inner command is unsafe)
+    ("xargs rm", False),
+    ("xargs rm -rf", False),
+    ("find . | xargs rm", False),
+    ("xargs -0 rm", False),
+    ("xargs -I {} rm {}", False),
+    ("xargs -n 1 rm", False),
+    ("xargs mv", False),
+    ("xargs cp", False),
+    ("xargs chmod 777", False),
+    ("xargs -- rm", False),
+
+    # xargs - no command (defer)
+    ("xargs", False),
+    ("xargs -0", False),
+    ("xargs -I {}", False),
+
+    # xargs with shell -c (delegates to check_shell_c)
+    ("xargs -I {} sh -c 'echo {}'", True),
+    ("xargs -I {} bash -c 'cat {}'", True),
+    ("xargs -I {} sh -c 'rm {}'", False),
+    ("xargs -I {} bash -c 'echo {} && rm {}'", False),
 ]
 
 

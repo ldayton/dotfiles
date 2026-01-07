@@ -92,6 +92,7 @@ CLI_CONFIGS = {
             "deployment": 2,      # az deployment group show
             "devops": 2,          # az devops team list
             "keyvault": 2,        # az keyvault secret list
+            "ml": 2,              # az ml workspace list
             "monitor": 2,         # az monitor log-analytics query
             "network": 2,
             "role": 2,            # az role assignment list
@@ -101,6 +102,7 @@ CLI_CONFIGS = {
         "subservice_depths": {
             ("acr", "repository"): 2,     # az acr repository list
             ("boards", "iteration"): 3,   # az boards iteration team list
+            ("cognitiveservices", "account", "deployment"): 3,  # az cognitiveservices account deployment list
             ("containerapp", "logs"): 2,  # az containerapp logs show
             ("containerapp", "revision"): 2,  # az containerapp revision list
             ("deployment", "operation"): 3,  # az deployment operation group list
@@ -339,6 +341,34 @@ def check_shell_c(tokens: list[str]) -> bool:
     return all(is_command_safe(cmd) for cmd in inner_commands)
 
 
+XARGS_FLAGS_WITH_ARG = {
+    "-a", "--arg-file", "-d", "--delimiter", "-E", "-e", "--eof",
+    "-I", "-i", "--replace", "-L", "-l", "--max-lines", "-n", "--max-args",
+    "-P", "--max-procs", "-s", "--max-chars", "--process-slot-var",
+}
+
+
+def check_xargs(tokens: list[str]) -> bool:
+    """Approve xargs if the command it runs is safe."""
+    i = 1
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok == "--":
+            i += 1
+            break
+        if tok in XARGS_FLAGS_WITH_ARG:
+            i += 2
+        elif tok.startswith("--") and "=" in tok:
+            i += 1
+        elif tok.startswith("-"):
+            i += 1
+        else:
+            break
+    if i >= len(tokens):
+        return False
+    return is_command_safe(tokens[i:])
+
+
 def check_auth0_api(tokens: list[str]) -> bool:
     """Approve auth0 api if it's a GET request (no mutation method or data flags)."""
     # tokens: ['auth0', 'api', 'get', 'path'] or ['auth0', 'api', 'path'] (defaults to GET)
@@ -408,6 +438,7 @@ CUSTOM_CHECKS: dict[str, Callable[[list[str]], bool]] = {
     "sed": check_sed,
     "sh": check_shell_c,
     "sort": check_sort,
+    "xargs": check_xargs,
     "zsh": check_shell_c,
 }
 
@@ -514,6 +545,12 @@ def _get_variable_depth_action(tokens: list[str], config: dict[str, Any]) -> str
         subservice_key = (service, subservice)
         if subservice_key in subservice_depths:
             depth = subservice_depths[subservice_key]
+        # Check for sub-subservice override (e.g., "cognitiveservices account deployment" -> depth 4)
+        if i + 2 < len(tokens):
+            subsubservice = tokens[i + 2]
+            subsubservice_key = (service, subservice, subsubservice)
+            if subsubservice_key in subservice_depths:
+                depth = subservice_depths[subsubservice_key]
 
     target_idx = i + depth
     if target_idx < len(tokens):
