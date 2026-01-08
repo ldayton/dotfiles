@@ -1,21 +1,7 @@
 {
-  "alwaysThinkingEnabled": false,
   "attribution": {
     "commit": "",
     "pr": ""
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/source/Dippy/src/dippy/dippy.py"
-          }
-        ]
-      }
-    ]
   },
   "permissions": {
     "allow": [
@@ -106,9 +92,22 @@
       "Read(//**/.env)"
     ]
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uvx --from git+https://github.com/ldayton/Dippy.git dippy"
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
+    "type": "command",
     "command": "npx -y ccstatusline@latest",
-    "padding": 0,
-    "type": "command"
+    "padding": 0
   }
 }
