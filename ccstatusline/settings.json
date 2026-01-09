@@ -24,9 +24,29 @@
         "id": "49923d8f-556e-4d58-a4bb-30e7a0604a06",
         "type": "context-percentage-usable",
         "color": "brightWhite"
+      },
+      {
+        "id": "mcp-sep-001",
+        "type": "separator"
+      },
+      {
+        "id": "mcp-status-001",
+        "type": "custom-command",
+        "commandPath": "~/source/dotfiles/claude/mcp-status",
+        "color": "green",
+        "timeout": 200
       }
     ],
     [
+      {
+        "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "type": "cwd",
+        "color": "cyan"
+      },
+      {
+        "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+        "type": "separator"
+      },
       {
         "id": "19d580a7-333e-440a-9be5-68a5edf29340",
         "type": "git-branch",
