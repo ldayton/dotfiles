@@ -51,6 +51,10 @@ if [ -f "$DOTFILES/claude/settings.json" ]; then
     link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
 fi
 
+if [ -f "$DOTFILES/ccstatusline/settings.json" ]; then
+    link "$DOTFILES/ccstatusline/settings.json" "$HOME/.config/ccstatusline/settings.json"
+fi
+
 if [ -f "$DOTFILES/vscode/settings.json" ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
         VSCODE_DIR="$HOME/Library/Application Support/Code/User"
