@@ -1,6 +1,5 @@
 [user]
 	name = Lily Dayton
-	email = lily.dayton.git@gmail.com
 [pull]
 	rebase = false
 [alias]
