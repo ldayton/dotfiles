@@ -70,7 +70,13 @@ fi
 alias ..="cd .."
 alias y="yt-dlp"
 alias lg="lazygit"
-alias claude='npx @anthropic-ai/claude-code'
+claude() {
+    mkdir -p ~/.claude
+    cat ~/source/dotfiles/claude/CLAUDE.base.md > ~/.claude/CLAUDE.md
+    echo >> ~/.claude/CLAUDE.md
+    cat ~/.claude/CLAUDE.local.md >> ~/.claude/CLAUDE.md 2>/dev/null
+    npx @anthropic-ai/claude-code "$@"
+}
 
 #--- fix key bindings ---#
 bindkey "^[[H" beginning-of-line     # Home key
