@@ -49,6 +49,7 @@ fi
 if [ -f "$DOTFILES/claude/settings.json" ]; then
     mkdir -p "$HOME/.claude"
     link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
+    link "$DOTFILES/claude/statusline.py" "$HOME/.claude/statusline.py"
 fi
 
 if [ -f "$DOTFILES/ccstatusline/settings.json" ]; then
