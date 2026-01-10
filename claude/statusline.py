@@ -159,6 +159,25 @@ def get_mcp_servers() -> str | None:
     return f"{title} {cached}"
 
 
+def is_dippy_configured() -> bool:
+    """Check if Dippy hook is correctly configured with an executable file."""
+    try:
+        settings_path = os.path.expanduser("~/.claude/settings.json")
+        with open(settings_path) as f:
+            settings = json.load(f)
+        hooks = settings.get("hooks", {}).get("PreToolUse", [])
+        for hook in hooks:
+            if hook.get("matcher") == "Bash":
+                for h in hook.get("hooks", []):
+                    cmd = h.get("command", "")
+                    path = os.path.expanduser(cmd.split()[0]) if cmd else ""
+                    if path and os.path.isfile(path) and os.access(path, os.X_OK):
+                        return True
+    except Exception:
+        pass
+    return False
+
+
 def get_context_from_transcript(transcript_path: str) -> int | None:
     """Read transcript JSONL and get actual context length from most recent message."""
     if not transcript_path:
@@ -271,6 +290,8 @@ def build_statusline(data: dict) -> str:
         pass
     fg_c, bg_c = STYLES["model"]
     model = style(model, fg_c, bg_c)
+    if is_dippy_configured():
+        model = f"🐤 {model}"
     display_cwd = os.path.basename(cwd) if cwd else ""
     if display_cwd:
         fg_c, bg_c = STYLES["directory"]

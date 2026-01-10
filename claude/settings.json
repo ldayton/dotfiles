@@ -103,7 +103,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uvx --from git+https://github.com/ldayton/Dippy.git dippy"
+            "command": "~/source/Dippy/bin/dippy-hook"
           }
         ]
       }
