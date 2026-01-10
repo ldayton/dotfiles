@@ -77,6 +77,7 @@ claude() {
     cat ~/.claude/CLAUDE.local.md >> ~/.claude/CLAUDE.md 2>/dev/null
     npx @anthropic-ai/claude-code "$@"
 }
+pypi() { curl -sS "https://pypi.org/pypi/$1/json" | jq -r .info.version; }
 
 #--- fix key bindings ---#
 bindkey "^[[H" beginning-of-line     # Home key

@@ -25,6 +25,7 @@
 - Don't run ruff unless I ask
 - Don't do Python syntax checks (uv run python3 -m py_compile). They're pointless.
 - Use -sS with curl
+- Use `pypi <package>` to look up latest PyPI versions
 
 # MCP Tools
 - Use GitHub's MCP server when possible, not the gh CLI tool
