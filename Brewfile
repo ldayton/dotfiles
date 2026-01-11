@@ -1,5 +1,6 @@
 # Development Tools
 brew "git"         # distributed version control system
+brew "go"          # programming language with built-in concurrency
 brew "gh"          # GitHub's official command line tool
 brew "just"        # command runner for project-specific tasks
 brew "lazygit"     # simple terminal UI for git commands
