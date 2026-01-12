@@ -5,6 +5,59 @@ import os
 import subprocess
 import sys
 import time
+import traceback
+from datetime import datetime, timezone
+
+LOG_PATH = os.path.expanduser("~/.claude/statusline.log")
+LOG_MAX_SIZE = 1024 * 1024  # 1MB
+
+
+class Logger:
+    """Structlog-style structured logger."""
+
+    def __init__(self, path: str, max_size: int = LOG_MAX_SIZE):
+        self._path = path
+        self._max_size = max_size
+
+    def _rotate_if_needed(self):
+        try:
+            if os.path.exists(self._path) and os.path.getsize(self._path) > self._max_size:
+                backup = f"{self._path}.1"
+                if os.path.exists(backup):
+                    os.remove(backup)
+                os.rename(self._path, backup)
+        except Exception:
+            pass
+
+    def _write(self, level: str, event: str, **kwargs):
+        try:
+            self._rotate_if_needed()
+            entry = {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "level": level,
+                "event": event,
+                **kwargs,
+            }
+            with open(self._path, "a") as f:
+                f.write(json.dumps(entry) + "\n")
+        except Exception:
+            pass
+
+    def debug(self, event: str, **kwargs):
+        self._write("DEBUG", event, **kwargs)
+
+    def info(self, event: str, **kwargs):
+        self._write("INFO", event, **kwargs)
+
+    def warning(self, event: str, **kwargs):
+        self._write("WARNING", event, **kwargs)
+
+    def error(self, event: str, **kwargs):
+        self._write("ERROR", event, exc_info=traceback.format_exc(), **kwargs)
+
+
+log = Logger(LOG_PATH)
+
 
 # Terminal color palette (Molokai)
 # Foreground: "#rrggbb"
@@ -102,11 +155,19 @@ def get_cache_path(session_id: str) -> str:
 def get_cached(session_id: str) -> str | None:
     try:
         path = get_cache_path(session_id)
-        if time.time() - os.path.getmtime(path) > CACHE_TTL:
+        age = time.time() - os.path.getmtime(path)
+        if age > CACHE_TTL:
+            log.debug("cache_expired", session_id=session_id, age=age, ttl=CACHE_TTL)
             return None
         with open(path) as f:
-            return f.read()
+            cached = f.read()
+        log.debug("cache_hit", session_id=session_id, age=age)
+        return cached
+    except FileNotFoundError:
+        log.debug("cache_miss", session_id=session_id)
+        return None
     except Exception:
+        log.error("cache_read_failed", session_id=session_id)
         return None
 
 
@@ -118,28 +179,61 @@ def set_cache(session_id: str, output: str):
         with open(tmp, "w") as f:
             f.write(output)
         os.rename(tmp, path)
+        log.debug("cache_set", session_id=session_id, path=path)
     except Exception:
-        pass
+        log.error("cache_set_failed", session_id=session_id)
 
 
 MCP_CACHE_PATH = os.path.join(CACHE_DIR, "mcp.cache")
+MCP_LOCAL_PATH = os.path.expanduser("~/.claude/mcp.local.json")
+
+
+def get_local_mcp_servers() -> list[str]:
+    """Read server names from mcp.local.json."""
+    try:
+        with open(MCP_LOCAL_PATH) as f:
+            data = json.load(f)
+        servers = data.get("mcpServers", data)
+        if isinstance(servers, dict):
+            names = list(servers.keys())
+            log.debug("mcp_local_loaded", path=MCP_LOCAL_PATH, servers=names)
+            return names
+        log.warning("mcp_local_invalid_format", path=MCP_LOCAL_PATH)
+    except FileNotFoundError:
+        log.debug("mcp_local_not_found", path=MCP_LOCAL_PATH)
+    except json.JSONDecodeError as e:
+        log.error("mcp_local_parse_error", path=MCP_LOCAL_PATH, error=str(e))
+    except Exception:
+        log.error("mcp_local_read_failed", path=MCP_LOCAL_PATH)
+    return []
 
 
 def get_mcp_servers() -> str | None:
-    """Read cached MCP servers, spawn refresh if stale."""
+    """Read MCP servers from local config and cached global list."""
+    local_servers = get_local_mcp_servers()
+    conn_r, conn_g, conn_b = hex_to_rgb(MOLOKAI[STYLES["mcp_connected"][0]])
+    local_styled = [
+        f"\033[38;2;{conn_r};{conn_g};{conn_b}m{name}\033[0m"
+        for name in local_servers
+    ]
     try:
         mtime = os.path.getmtime(MCP_CACHE_PATH)
         age = time.time() - mtime
         with open(MCP_CACHE_PATH) as f:
             cached = f.read().strip()
+        log.debug("mcp_cache_read", age=age, has_cached=bool(cached))
+    except FileNotFoundError:
+        log.debug("mcp_cache_not_found", path=MCP_CACHE_PATH)
+        age = MCP_CACHE_TTL + 1
+        cached = ""
     except Exception:
+        log.error("mcp_cache_read_failed", path=MCP_CACHE_PATH)
         age = MCP_CACHE_TTL + 1
         cached = ""
     if age >= MCP_CACHE_TTL:
         try:
             os.makedirs(CACHE_DIR, exist_ok=True)
             tmp = f"{MCP_CACHE_PATH}.tmp.{os.getpid()}"
-            conn_r, conn_g, conn_b = hex_to_rgb(MOLOKAI[STYLES["mcp_connected"][0]])
             disc_r, disc_g, disc_b = hex_to_rgb(MOLOKAI[STYLES["mcp_disconnected"][0]])
             cmd = f"timeout 10 claude mcp list 2>/dev/null | awk -F: 'NF>1 {{if (/Connected/) print \"\\033[38;2;{conn_r};{conn_g};{conn_b}m\" $1 \"\\033[0m\"; else print \"\\033[38;2;{disc_r};{disc_g};{disc_b}m!\" $1 \"\\033[0m\"}}' | paste -sd, | sed 's/,/, /g' > {tmp} && mv {tmp} {MCP_CACHE_PATH}"
             subprocess.Popen(
@@ -150,13 +244,19 @@ def get_mcp_servers() -> str | None:
                 stderr=subprocess.DEVNULL,
                 start_new_session=True,
             )
+            log.debug("mcp_cache_refresh_spawned", age=age, ttl=MCP_CACHE_TTL)
         except Exception:
-            pass
-    if not cached:
+            log.error("mcp_cache_refresh_failed")
+    all_servers = local_styled.copy()
+    if cached:
+        all_servers.append(cached)
+    if not all_servers:
+        log.debug("mcp_no_servers")
         return None
+    log.debug("mcp_servers_result", local_count=len(local_servers), has_cached=bool(cached))
     fg_c, bg_c = STYLES["mcp_title"]
     title = style("MCP:", fg_c, bg_c)
-    return f"{title} {cached}"
+    return f"{title} {', '.join(all_servers)}"
 
 
 def is_dippy_configured() -> bool:
@@ -172,15 +272,20 @@ def is_dippy_configured() -> bool:
                     cmd = h.get("command", "")
                     path = os.path.expanduser(cmd.split()[0]) if cmd else ""
                     if path and os.path.isfile(path) and os.access(path, os.X_OK):
+                        log.debug("dippy_configured", path=path)
                         return True
+        log.debug("dippy_not_configured")
+    except FileNotFoundError:
+        log.debug("dippy_settings_not_found", path=settings_path)
     except Exception:
-        pass
+        log.error("dippy_check_failed")
     return False
 
 
 def get_context_from_transcript(transcript_path: str) -> int | None:
     """Read transcript JSONL and get actual context length from most recent message."""
     if not transcript_path:
+        log.debug("transcript_no_path")
         return None
     try:
         with open(transcript_path, "rb") as f:
@@ -194,16 +299,21 @@ def get_context_from_transcript(transcript_path: str) -> int | None:
                 entry = json.loads(line)
                 usage = entry.get("message", {}).get("usage")
                 if usage:
-                    return (
+                    total = (
                         usage.get("input_tokens", 0)
                         + usage.get("output_tokens", 0)
                         + usage.get("cache_read_input_tokens", 0)
                         + usage.get("cache_creation_input_tokens", 0)
                     )
+                    log.debug("transcript_tokens_found", tokens=total, path=transcript_path)
+                    return total
             except json.JSONDecodeError:
                 continue
+        log.debug("transcript_no_usage", path=transcript_path, lines_checked=len(lines))
+    except FileNotFoundError:
+        log.debug("transcript_not_found", path=transcript_path)
     except Exception:
-        pass
+        log.error("transcript_read_failed", path=transcript_path)
     return None
 
 
@@ -212,21 +322,26 @@ def get_context_remaining(data: dict) -> str | None:
         ctx = data.get("context_window", {})
         size = ctx.get("context_window_size", 0)
         if not size:
+            log.debug("context_no_window_size")
             return None
         used = get_context_from_transcript(data.get("transcript_path", ""))
         if used is None:
+            log.debug("context_no_usage_data", size=size)
             fg_c, bg_c = STYLES["context"]
             return style("ctx: 80% left", fg_c, bg_c)
         used_pct = used * 100 // size
         until_compact = max(0, 80 - used_pct)
+        log.debug("context_calculated", size=size, used=used, used_pct=used_pct, remaining_pct=until_compact)
         fg_c, bg_c = STYLES["context"]
         return style(f"ctx: {until_compact}% left", fg_c, bg_c)
     except Exception:
+        log.error("context_remaining_failed")
         return None
 
 
 def get_git_changes(cwd: str) -> str | None:
     if not cwd:
+        log.debug("git_changes_no_cwd")
         return None
     try:
         result = subprocess.run(
@@ -236,9 +351,11 @@ def get_git_changes(cwd: str) -> str | None:
             timeout=1,
         )
         if result.returncode != 0:
+            log.debug("git_changes_not_repo", cwd=cwd, returncode=result.returncode)
             return None
         stat = result.stdout.strip()
         if not stat:
+            log.debug("git_changes_clean", cwd=cwd)
             fg_c, bg_c = STYLES["changes_clean"]
             return style("clean", fg_c, bg_c)
         added = removed = 0
@@ -248,15 +365,19 @@ def get_git_changes(cwd: str) -> str | None:
                 added = int(part.split()[0])
             elif "deletion" in part:
                 removed = int(part.split()[0])
+        log.debug("git_changes_dirty", cwd=cwd, added=added, removed=removed)
         fg_c, bg_c = STYLES["changes_dirty"]
         return style(f"Δ +{added},-{removed}", fg_c, bg_c)
+    except subprocess.TimeoutExpired:
+        log.warning("git_changes_timeout", cwd=cwd)
     except Exception:
-        pass
+        log.error("git_changes_failed", cwd=cwd)
     return None
 
 
 def get_git_branch(cwd: str) -> str | None:
     if not cwd:
+        log.debug("git_branch_no_cwd")
         return None
     try:
         result = subprocess.run(
@@ -268,12 +389,17 @@ def get_git_branch(cwd: str) -> str | None:
         if result.returncode == 0:
             branch = result.stdout.strip()
             if branch:
+                log.debug("git_branch_found", cwd=cwd, branch=branch)
                 fg_c, bg_c = STYLES["branch"]
                 return style(f"⎇ {branch}", fg_c, bg_c)
+            log.debug("git_branch_detached", cwd=cwd)
             fg_c, bg_c = STYLES["branch_detached"]
             return style("⎇ [detached head]", fg_c, bg_c)
+        log.debug("git_branch_not_repo", cwd=cwd, returncode=result.returncode)
+    except subprocess.TimeoutExpired:
+        log.warning("git_branch_timeout", cwd=cwd)
     except Exception:
-        pass
+        log.error("git_branch_failed", cwd=cwd)
     return None
 
 
@@ -283,11 +409,12 @@ def build_statusline(data: dict) -> str:
     try:
         model = data.get("model", {}).get("display_name") or "?"
     except Exception:
-        pass
+        log.error("build_statusline_model_failed")
     try:
         cwd = data.get("workspace", {}).get("current_dir") or ""
     except Exception:
-        pass
+        log.error("build_statusline_cwd_failed")
+    log.debug("build_statusline_start", model=model, cwd=cwd)
     fg_c, bg_c = STYLES["model"]
     model = style(model, fg_c, bg_c)
     if is_dippy_configured():
@@ -309,21 +436,27 @@ def build_statusline(data: dict) -> str:
     mcp = get_mcp_servers()
     if mcp:
         parts.append(mcp)
+    log.debug("build_statusline_done", parts_count=len(parts))
     return " | ".join(parts)
 
 
 def main():
+    log.info("main_start")
     try:
         data = json.load(sys.stdin)
+        log.debug("main_input_parsed", session_id=data.get("session_id", ""))
     except Exception:
+        log.warning("main_input_parse_failed")
         data = {}
     session_id = data.get("session_id", "")
     cached = get_cached(session_id)
     if cached:
+        log.info("main_served_cached", session_id=session_id)
         print(cached)
         return
     output = build_statusline(data)
     set_cache(session_id, output)
+    log.info("main_built_fresh", session_id=session_id)
     print(output)
 
 
@@ -331,4 +464,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception:
+        log.error("main_fatal")
         print("?")

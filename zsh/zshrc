@@ -75,7 +75,9 @@ claude() {
     cat ~/source/dotfiles/claude/CLAUDE.base.md > ~/.claude/CLAUDE.md
     echo >> ~/.claude/CLAUDE.md
     cat ~/.claude/CLAUDE.local.md >> ~/.claude/CLAUDE.md 2>/dev/null
-    npx @anthropic-ai/claude-code "$@"
+    local mcp_args=()
+    [[ -f ~/.claude/mcp.local.json ]] && mcp_args=(--mcp-config ~/.claude/mcp.local.json)
+    npx @anthropic-ai/claude-code "${mcp_args[@]}" "$@"
 }
 pypi() { curl -sS "https://pypi.org/pypi/$1/json" | jq -r .info.version; }
 
