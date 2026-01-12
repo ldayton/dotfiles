@@ -1,4 +1,5 @@
 # Development Tools
+brew "cloc"        # code statistics
 brew "git"         # distributed version control system
 brew "go"          # programming language with built-in concurrency
 brew "gh"          # GitHub's official command line tool
@@ -9,7 +10,6 @@ brew "pnpm"        # fast, disk space efficient package manager
 brew "python"      # interpreted, interactive, object-oriented programming language
 brew "rustup"      # Rust toolchain installer
 cask "temurin"     # Eclipse Temurin OpenJDK (latest)
-brew "tokei"       # fast code statistics with pretty output
 brew "uv"          # extremely fast Python package manager and resolver
 brew "vite"        # next generation frontend tooling
 
@@ -35,6 +35,7 @@ brew "aws-cdk"                # AWS Cloud Development Kit for infrastructure as 
 brew "awscli"                 # official AWS command-line interface
 brew "awscurl"                # curl wrapper for AWS API calls with sigv4
 brew "awslogs"                # query and stream CloudWatch logs
+cask "gcloud-cli"             # Google Cloud Platform command-line interface
 brew "helm"                   # Kubernetes package manager
 cask "session-manager-plugin" # AWS Systems Manager Session Manager plugin
 brew "terraform"              # infrastructure as code tool for cloud provisioning

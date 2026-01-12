@@ -35,8 +35,9 @@ if [[ -d "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home" ]]; th
     export PATH=$JAVA_HOME/bin:$PATH
 fi
 
-#--- claude tools ---#
+#--- AI assistants ---#
 export PATH="$HOME/source/dotfiles/claude:$PATH"
+export PATH="$HOME/.local/bin:$PATH" # agent (cursor)
 
 #--- shell tools ---#
 if [[ -x "$HOME/.local/bin/starship" ]]; then
