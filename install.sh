@@ -35,8 +35,13 @@ link() {
 
 link "$DOTFILES/zsh/zshrc" "$HOME/.zshrc"
 
-if [ -f "$DOTFILES/git/gitconfig" ] && [ "$USER" = "lily" ]; then
-    link "$DOTFILES/git/gitconfig" "$HOME/.gitconfig"
+if [ -f "$DOTFILES/git/gitconfig" ]; then
+    if [ -e "$HOME/.gitconfig" ]; then
+        echo "  ✗ Skipped $HOME/.gitconfig (already exists)"
+    else
+        cp "$DOTFILES/git/gitconfig" "$HOME/.gitconfig"
+        echo "  ✓ Copied $HOME/.gitconfig"
+    fi
 fi
 if [ -f "$DOTFILES/ripgrep/ripgreprc" ]; then
     link "$DOTFILES/ripgrep/ripgreprc" "$HOME/.ripgreprc"

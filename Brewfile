@@ -30,12 +30,14 @@ brew "watch"       # execute a command periodically
 
 # Cloud Tools
 tap "auth0/auth0-cli"
+tap "openfga/tap"
 brew "auth0"                  # Auth0 command-line interface
+brew "openfga/tap/fga"        # OpenFGA/Auth0 FGA command-line interface
 brew "aws-cdk"                # AWS Cloud Development Kit for infrastructure as code
 brew "awscli"                 # official AWS command-line interface
 brew "awscurl"                # curl wrapper for AWS API calls with sigv4
 brew "awslogs"                # query and stream CloudWatch logs
-cask "gcloud-cli"             # Google Cloud Platform command-line interface
+# cask "gcloud-cli"           # broken on Linux - install via https://cloud.google.com/sdk/docs/install
 brew "helm"                   # Kubernetes package manager
 cask "session-manager-plugin" # AWS Systems Manager Session Manager plugin
 brew "terraform"              # infrastructure as code tool for cloud provisioning
