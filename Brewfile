@@ -30,10 +30,8 @@ brew "yq"          # lightweight YAML processor
 brew "watch"       # execute a command periodically
 
 # Cloud Tools
-tap "auth0/auth0-cli"
-tap "openfga/tap"
-brew "auth0"                  # Auth0 command-line interface
-brew "openfga/tap/fga"        # OpenFGA/Auth0 FGA command-line interface
+tap "openfga/tap"             # OpenFGA/Auth0 FGA command-line interface
+brew "openfga/tap/fga"
 brew "aws-cdk"                # AWS Cloud Development Kit for infrastructure as code
 brew "awscli"                 # official AWS command-line interface
 brew "awscurl"                # curl wrapper for AWS API calls with sigv4
@@ -64,4 +62,9 @@ if OS.mac?
   cask "font-fira-code-nerd-font"        # monospaced font with programming ligatures and icons
   cask "font-jetbrains-mono-nerd-font"   # JetBrains IDE font with ligatures and icons
   cask "font-zed-mono-nerd-font"         # Zed editor font with icons
+end
+
+if OS.linux?
+  tap "auth0/auth0-cli"
+  brew "auth0"                  # Auth0 command-line interface
 end
