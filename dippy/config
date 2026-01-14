@@ -1,0 +1,5 @@
+set log ~/.claude/audit.log
+set log-full
+
+allow mkdir *
+allow-redirect /tmp/*
