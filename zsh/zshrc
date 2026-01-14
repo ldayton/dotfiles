@@ -40,6 +40,7 @@ export PATH="$HOME/source/dotfiles/claude:$PATH"
 export PATH="$HOME/.local/bin:$PATH" # agent (cursor)
 
 #--- shell tools ---#
+alias fd="fd --hidden --no-ignore --exclude cdk.out --exclude node_modules --exclude .git --exclude __pycache__ --exclude .venv"
 if [[ -x "$HOME/.local/bin/starship" ]]; then
     eval "$($HOME/.local/bin/starship init zsh)"
 elif command -v starship &> /dev/null; then

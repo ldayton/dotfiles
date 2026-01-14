@@ -9,7 +9,6 @@ brew "node"        # JavaScript runtime built on V8
 brew "pnpm"        # fast, disk space efficient package manager
 brew "python"      # interpreted, interactive, object-oriented programming language
 brew "rustup"      # Rust toolchain installer
-cask "temurin"     # Eclipse Temurin OpenJDK (latest)
 brew "uv"          # extremely fast Python package manager and resolver
 brew "vite"        # next generation frontend tooling
 
@@ -26,22 +25,21 @@ brew "bat"         # cat clone with syntax highlighting and Git integration
 brew "fd"          # simple, fast alternative to find
 brew "ripgrep"     # ultra-fast grep with smart defaults
 brew "jq"          # lightweight JSON processor
+brew "yamllint"    # linter for YAML files
+brew "yq"          # lightweight YAML processor
 brew "watch"       # execute a command periodically
 
 # Cloud Tools
-# tap "auth0/auth0-cli"
-# tap "openfga/tap"
-# brew "auth0"                  # Auth0 command-line interface
-# brew "openfga/tap/fga"        # OpenFGA/Auth0 FGA command-line interface
+tap "auth0/auth0-cli"
+tap "openfga/tap"
+brew "auth0"                  # Auth0 command-line interface
+brew "openfga/tap/fga"        # OpenFGA/Auth0 FGA command-line interface
 brew "aws-cdk"                # AWS Cloud Development Kit for infrastructure as code
 brew "awscli"                 # official AWS command-line interface
 brew "awscurl"                # curl wrapper for AWS API calls with sigv4
 brew "awslogs"                # query and stream CloudWatch logs
-# cask "gcloud-cli"           # broken on Linux - install via https://cloud.google.com/sdk/docs/install
 brew "helm"                   # Kubernetes package manager
-cask "session-manager-plugin" # AWS Systems Manager Session Manager plugin
 brew "terraform"              # infrastructure as code tool for cloud provisioning
-
 
 # Network Tools
 brew "bind"        # includes dig, nslookup, and other DNS utilities
@@ -56,8 +54,13 @@ brew "imagemagick" # create, edit, compose, or convert bitmap images
 brew "libicns"     # library and tools for manipulating Mac OS icns files
 brew "yt-dlp"      # download videos from YouTube and other sites
 
-# Fonts
-cask "font-caskaydia-cove-nerd-font"   # Microsoft's modern terminal font with icons
-cask "font-fira-code-nerd-font"        # monospaced font with programming ligatures and icons
-cask "font-jetbrains-mono-nerd-font"   # JetBrains IDE font with ligatures and icons
-cask "font-zed-mono-nerd-font"         # Zed editor font with icons
+# macOS only (casks don't work on Linux)
+if OS.mac?
+  cask "temurin"                         # Eclipse Temurin OpenJDK (latest)
+  cask "gcloud-cli"                      # Google Cloud CLI
+  cask "session-manager-plugin"          # AWS Systems Manager Session Manager plugin
+  cask "font-caskaydia-cove-nerd-font"   # Microsoft's modern terminal font with icons
+  cask "font-fira-code-nerd-font"        # monospaced font with programming ligatures and icons
+  cask "font-jetbrains-mono-nerd-font"   # JetBrains IDE font with ligatures and icons
+  cask "font-zed-mono-nerd-font"         # Zed editor font with icons
+end
