@@ -56,9 +56,10 @@ brew "yt-dlp"      # download videos from YouTube and other sites
 
 # macOS only (casks don't work on Linux)
 if OS.mac?
-  cask "temurin"                         # Eclipse Temurin OpenJDK (latest)
+  cask "codex"                           # OpenAI's coding assistant
   cask "gcloud-cli"                      # Google Cloud CLI
   cask "session-manager-plugin"          # AWS Systems Manager Session Manager plugin
+  cask "temurin"                         # Eclipse Temurin OpenJDK (latest)
   cask "font-caskaydia-cove-nerd-font"   # Microsoft's modern terminal font with icons
   cask "font-fira-code-nerd-font"        # monospaced font with programming ligatures and icons
   cask "font-jetbrains-mono-nerd-font"   # JetBrains IDE font with ligatures and icons
