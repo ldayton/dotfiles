@@ -3,3 +3,5 @@ set log-full
 
 allow mkdir *
 allow-redirect /tmp/*
+
+allow pypi *

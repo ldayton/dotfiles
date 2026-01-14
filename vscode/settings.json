@@ -15,6 +15,7 @@
   "editor.renderWhitespace": "trailing",
   "editor.tabSize": 2,
   "editor.wordWrap": "on",
+  "editor.selectionClipboard": true,
 
   // File watching
   "remote.WSL.fileWatcher.polling": true,
@@ -64,7 +65,6 @@
     "editor.defaultFormatter": "yzhang.markdown-all-in-one"
   },
   "[rust]": {
-    "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
   // Rust-analyzer settings
   "rust-analyzer.cargo.targetDir": true,
