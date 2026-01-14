@@ -1,4 +1,4 @@
-set log ~/.claude/audit.log
+set log ~/.claude/dippy-audit.log
 set log-full
 
 allow mkdir *
