@@ -27,16 +27,16 @@
 - Use -sS with curl
 - Use `pypi <package>` to look up latest PyPI versions
 
-# MCP Tools
-- Use GitHub's MCP server when possible, not the gh CLI tool
-
 # WSL
 - When given a Windows path you can find it on WSL under /mnt/c
+- 
+# MCP
 
-## MCP Servers
+1. First preference is for direct access to MCP servers
+2. Second preference using CLI tools like gh
+3. Only if asked, use mcp-cli
 
-You have access to MCP (Model Context Protocol) servers via the `mcp-cli` cli.
-MCP provides tools for interacting with external systems like GitHub, databases, and APIs.
+## mcp-cli
 
 Available Commands:
 
@@ -56,7 +56,7 @@ Workflow:
 2. **Inspect**: Run `mcp-cli <server> -d` or `mcp-cli <server>/<tool>` to get the full JSON input schema if required context is missing. If there are more than 5 mcp servers defined don't use -d as it will print all tool descriptions and might exceed the context window.  
 3. **Execute**: Run `mcp-cli <server>/<tool> '<json>'` with correct arguments
 
-### Examples
+## Examples
 
 ```bash
 # With inline JSON
@@ -74,7 +74,7 @@ EOF
 mcp-cli filesystem/search_files '{"path": "src/", "pattern": "*.ts"}' --json | jq -r '.content[0].text' | head -1 | xargs -I {} sh -c 'mcp-cli filesystem/read_file "{\"path\": \"{}\"}"'
 ```
 
-### Rules
+## Rules
 
 1. **Always check schema first**: Run `mcp-cli <server> -d or `mcp-cli <server>/<tool>` before calling any tool
 3. **Quote JSON arguments**: Wrap JSON in single quotes to prevent shell interpretation
