@@ -1,7 +1,10 @@
+# Global dippy config
+
 set log ~/.claude/dippy-audit.log
 set log-full
 
-allow mkdir *
-allow-redirect /tmp/*
+allow-redirect /tmp/**
+allow aws-azure-login *
 
+allow mkdir *
 allow pypi *
