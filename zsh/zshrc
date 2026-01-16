@@ -73,6 +73,28 @@ alias ..="cd .."
 alias y="yt-dlp"
 alias lg="lazygit"
 
+gh() {
+  local repo_path="."
+  local args=("$@")
+  local which_mode=false
+  for ((i=1; i<=${#args[@]}; i++)); do
+    if [[ "${args[i]}" == "-C" ]]; then
+      repo_path="${args[i+1]}"
+    elif [[ "${args[i]}" == "--which" ]]; then
+      which_mode=true
+    fi
+  done
+  local account=$(git -C "$repo_path" config gh.account 2>/dev/null)
+  if $which_mode; then
+    echo "${account:-default}"
+    return
+  fi
+  case "$account" in
+    ldayton) GH_TOKEN="${GH_TOKEN_LDAYTON}" command gh "$@" ;;
+    *)       command gh "$@" ;;
+  esac
+}
+
 # Claude Code wrapper:
 # - Builds ~/.claude/CLAUDE.md from ~/source/dotfiles/claude/CLAUDE.base.md + ~/.claude/CLAUDE.local.md
 # - Loads MCP config from ~/.claude/mcp.local.json if present
