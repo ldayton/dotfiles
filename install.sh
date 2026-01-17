@@ -16,7 +16,8 @@ link() {
 
     # Handle existing file/link if it exists
     if [ -L "$dest" ]; then
-        # It's a symlink, safe to remove
+        # It's a symlink - remove immutable flag if set, then unlink
+        chattr -i "$dest" 2>/dev/null || chflags -h nouchg "$dest" 2>/dev/null || true
         unlink "$dest"
     elif [ -f "$dest" ]; then
         # It's a regular file, back it up first
@@ -30,6 +31,8 @@ link() {
 
     # Create symlink
     ln -s "$src" "$dest"
+    # Make immutable if possible (Linux: chattr, macOS: chflags -h for symlinks)
+    chattr +i "$dest" 2>/dev/null || chflags -h uchg "$dest" 2>/dev/null || true
     echo "  ✓ Linked $dest"
 }
 

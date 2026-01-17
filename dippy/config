@@ -8,3 +8,28 @@ allow aws-azure-login *
 
 allow mkdir *
 allow pypi *
+
+# GitHub MCP read-only operations
+allow-mcp mcp__github__get_*
+allow-mcp mcp__github__list_*
+allow-mcp mcp__github__search_*
+
+# Azure DevOps MCP read-only operations
+allow-mcp mcp__azure-devops__core_list_*
+allow-mcp mcp__azure-devops__core_get_*
+allow-mcp mcp__azure-devops__work_list_*
+allow-mcp mcp__azure-devops__work_get_*
+allow-mcp mcp__azure-devops__pipelines_get_*
+allow-mcp mcp__azure-devops__pipelines_list_*
+allow-mcp mcp__azure-devops__repo_list_*
+allow-mcp mcp__azure-devops__repo_get_*
+allow-mcp mcp__azure-devops__repo_search_*
+allow-mcp mcp__azure-devops__wit_list_*
+allow-mcp mcp__azure-devops__wit_get_*
+allow-mcp mcp__azure-devops__wit_my_*
+allow-mcp mcp__azure-devops__wiki_list_*
+allow-mcp mcp__azure-devops__wiki_get_*
+allow-mcp mcp__azure-devops__testplan_list_*
+allow-mcp mcp__azure-devops__testplan_show_*
+allow-mcp mcp__azure-devops__search_*
+allow-mcp mcp__azure-devops__advsec_get_*
