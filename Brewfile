@@ -36,6 +36,7 @@ brew "aws-cdk"                # AWS Cloud Development Kit for infrastructure as 
 brew "awscli"                 # official AWS command-line interface
 brew "awscurl"                # curl wrapper for AWS API calls with sigv4
 brew "awslogs"                # query and stream CloudWatch logs
+brew "azure-cli"              # Microsoft Azure command-line interface
 brew "helm"                   # Kubernetes package manager
 brew "terraform"              # infrastructure as code tool for cloud provisioning
 
