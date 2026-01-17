@@ -9,6 +9,10 @@ allow aws-azure-login *
 allow mkdir *
 allow pypi *
 
+allow ~/source/bash-oracle/bash-oracle *
+allow just build
+
+
 # GitHub MCP read-only operations
 allow-mcp mcp__github__get_*
 allow-mcp mcp__github__list_*
@@ -33,5 +37,3 @@ allow-mcp mcp__azure-devops__testplan_list_*
 allow-mcp mcp__azure-devops__testplan_show_*
 allow-mcp mcp__azure-devops__search_*
 allow-mcp mcp__azure-devops__advsec_get_*
-
-allow ~/source/bash-oracle/bash-oracle *

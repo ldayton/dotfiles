@@ -16,6 +16,7 @@
 - "cap" means commit and push
 - Prefer git mv over mv
 - Don't amend commits or use --force
+- Don't use gh --admin or try to bypass rulesets
 - use git -C instead of needlessly changing directories
 
 # Shell Tools
