@@ -267,7 +267,7 @@ def is_dippy_configured() -> bool:
             settings = json.load(f)
         hooks = settings.get("hooks", {}).get("PreToolUse", [])
         for hook in hooks:
-            if hook.get("matcher") == "Bash":
+            if "Bash" in hook.get("matcher", ""):
                 for h in hook.get("hooks", []):
                     cmd = h.get("command", "")
                     path = os.path.expanduser(cmd.split()[0]) if cmd else ""
