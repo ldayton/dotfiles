@@ -33,3 +33,5 @@ allow-mcp mcp__azure-devops__testplan_list_*
 allow-mcp mcp__azure-devops__testplan_show_*
 allow-mcp mcp__azure-devops__search_*
 allow-mcp mcp__azure-devops__advsec_get_*
+
+allow ~/source/bash-oracle/bash-oracle *
