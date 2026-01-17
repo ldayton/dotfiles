@@ -1,8 +1,4 @@
 {
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.py"
-  },
   "attribution": {
     "commit": "",
     "pr": ""
@@ -14,92 +10,25 @@
       "Read(//**)",
       "Task",
       "WebFetch",
-      "WebSearch",
-      "mcp__azure-devops__core_list_projects",
-      "mcp__azure-devops__core_list_project_teams",
-      "mcp__azure-devops__core_get_identity_ids",
-      "mcp__azure-devops__work_list_team_iterations",
-      "mcp__azure-devops__work_list_iterations",
-      "mcp__azure-devops__work_get_team_capacity",
-      "mcp__azure-devops__work_get_iteration_capacities",
-      "mcp__azure-devops__pipelines_get_build_definitions",
-      "mcp__azure-devops__pipelines_get_build_definition_revisions",
-      "mcp__azure-devops__pipelines_get_builds",
-      "mcp__azure-devops__pipelines_get_build_log",
-      "mcp__azure-devops__pipelines_get_build_log_by_id",
-      "mcp__azure-devops__pipelines_get_build_changes",
-      "mcp__azure-devops__pipelines_get_run",
-      "mcp__azure-devops__pipelines_list_runs",
-      "mcp__azure-devops__pipelines_get_build_status",
-      "mcp__azure-devops__repo_list_repos_by_project",
-      "mcp__azure-devops__repo_list_pull_requests_by_repo_or_project",
-      "mcp__azure-devops__repo_list_pull_request_threads",
-      "mcp__azure-devops__repo_list_pull_request_thread_comments",
-      "mcp__azure-devops__repo_list_branches_by_repo",
-      "mcp__azure-devops__repo_list_my_branches_by_repo",
-      "mcp__azure-devops__repo_get_repo_by_name_or_id",
-      "mcp__azure-devops__repo_get_branch_by_name",
-      "mcp__azure-devops__repo_get_pull_request_by_id",
-      "mcp__azure-devops__repo_search_commits",
-      "mcp__azure-devops__repo_list_pull_requests_by_commits",
-      "mcp__azure-devops__wit_list_backlogs",
-      "mcp__azure-devops__wit_list_backlog_work_items",
-      "mcp__azure-devops__wit_my_work_items",
-      "mcp__azure-devops__wit_get_work_items_batch_by_ids",
-      "mcp__azure-devops__wit_get_work_item",
-      "mcp__azure-devops__wit_list_work_item_comments",
-      "mcp__azure-devops__wit_get_work_items_for_iteration",
-      "mcp__azure-devops__wit_get_work_item_type",
-      "mcp__azure-devops__wit_get_query",
-      "mcp__azure-devops__wit_get_query_results_by_id",
-      "mcp__azure-devops__wiki_get_wiki",
-      "mcp__azure-devops__wiki_list_wikis",
-      "mcp__azure-devops__wiki_list_pages",
-      "mcp__azure-devops__wiki_get_page",
-      "mcp__azure-devops__wiki_get_page_content",
-      "mcp__azure-devops__testplan_list_test_plans",
-      "mcp__azure-devops__testplan_list_test_cases",
-      "mcp__azure-devops__testplan_show_test_results_from_build_id",
-      "mcp__azure-devops__search_code",
-      "mcp__azure-devops__search_wiki",
-      "mcp__azure-devops__search_workitem",
-      "mcp__azure-devops__advsec_get_alerts",
-      "mcp__azure-devops__advsec_get_alert_details",
-      "mcp__github__get_me",
-      "mcp__github__get_file_contents",
-      "mcp__github__get_commit",
-      "mcp__github__get_tag",
-      "mcp__github__get_label",
-      "mcp__github__get_latest_release",
-      "mcp__github__get_release_by_tag",
-      "mcp__github__get_team_members",
-      "mcp__github__get_teams",
-      "mcp__github__issue_read",
-      "mcp__github__list_branches",
-      "mcp__github__list_commits",
-      "mcp__github__list_issue_types",
-      "mcp__github__list_issues",
-      "mcp__github__list_pull_requests",
-      "mcp__github__list_releases",
-      "mcp__github__list_tags",
-      "mcp__github__pull_request_read",
-      "mcp__github__search_code",
-      "mcp__github__search_issues",
-      "mcp__github__search_pull_requests",
-      "mcp__github__search_repositories",
-      "mcp__github__search_users"
-    ],
-    "deny": [
-      "Bash(rm -rf /*)",
-      "Read(//**/*.key)",
-      "Read(//**/*.pem)",
-      "Read(//**/.env)"
+      "WebSearch"
     ]
   },
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/source/Dippy/bin/dippy-hook"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -108,5 +37,9 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.py"
   }
 }
