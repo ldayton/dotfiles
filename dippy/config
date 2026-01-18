@@ -14,9 +14,10 @@ allow just build
 
 
 # GitHub MCP read-only operations
-allow-mcp mcp__github__get_*
-allow-mcp mcp__github__list_*
-allow-mcp mcp__github__search_*
+allow-mcp mcp__github*__get_*
+allow-mcp mcp__github*__list_*
+allow-mcp mcp__github*__search_*
+allow-mcp mcp__github*__*_read
 
 # Azure DevOps MCP read-only operations
 allow-mcp mcp__azure-devops__core_list_*

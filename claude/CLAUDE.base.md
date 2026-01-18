@@ -3,6 +3,7 @@
 - CLAUDE.md is generated from ~/source/dotfiles/claude/CLAUDE.base.md + ~/.claude/CLAUDE.local.md
 - Base contains universal preferences; local contains work/machine-specific config
 - "dotfiles" refers to ~/source/dotfiles
+- If I ask for a table or chart, I want a minimum of 3 columns displayed to me
 
 # Code Style
 - Don't add needless blank lines in function bodies
