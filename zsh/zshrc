@@ -58,6 +58,7 @@ fi
 #--- wsl ---#
 if [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
     export BROWSER=wslview
+    alias open='explorer.exe'
 fi
 
 #--- aliases ---#
