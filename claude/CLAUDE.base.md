@@ -31,53 +31,6 @@
 
 # WSL
 - When given a Windows path you can find it on WSL under /mnt/c
-- 
+
 # MCP
-
-1. First preference is for direct access to MCP servers
-2. Second preference using CLI tools like gh
-3. Only if asked, use mcp-cli
-
-## mcp-cli
-
-Available Commands:
-
-```bash
-mcp-cli                              # List all servers and tool names
-mcp-cli <server>                     # Show server tools and parameters
-mcp-cli <server>/<tool>              # Get tool JSON schema and descriptions
-mcp-cli <server>/<tool> '<json>'     # Call tool with JSON arguments
-mcp-cli grep "<pattern>"             # Search tools by name (glob pattern)
-```
-
-**Add `-d` to include tool descriptions** (e.g., `mcp-cli <server> -d`)
-
-Workflow:
-
-1. **Discover**: Run `mcp-cli` to see available servers and tools or `mcp-cli grep "<pattern>"` to search for tools by name (glob pattern)
-2. **Inspect**: Run `mcp-cli <server> -d` or `mcp-cli <server>/<tool>` to get the full JSON input schema if required context is missing. If there are more than 5 mcp servers defined don't use -d as it will print all tool descriptions and might exceed the context window.  
-3. **Execute**: Run `mcp-cli <server>/<tool> '<json>'` with correct arguments
-
-## Examples
-
-```bash
-# With inline JSON
-$ mcp-cli github/search_repositories '{"query": "mcp server", "per_page": 5}'
-
-# From stdin (use '-' to indicate stdin input)
-$ echo '{"query": "mcp"}' | mcp-cli github/search_repositories -
-
-# Using a heredoc with '-' for stdin (recommended for complex JSON)
-mcp-cli server/tool - <<EOF
-{"content": "Text with 'single quotes' and \"double quotes\""}
-EOF
-
-# Complex Command chaining with xargs and jq
-mcp-cli filesystem/search_files '{"path": "src/", "pattern": "*.ts"}' --json | jq -r '.content[0].text' | head -1 | xargs -I {} sh -c 'mcp-cli filesystem/read_file "{\"path\": \"{}\"}"'
-```
-
-## Rules
-
-1. **Always check schema first**: Run `mcp-cli <server> -d or `mcp-cli <server>/<tool>` before calling any tool
-3. **Quote JSON arguments**: Wrap JSON in single quotes to prevent shell interpretation
-
+- First preference is for direct access to MCP servers, but second preference using CLI tools like gh
