@@ -74,6 +74,7 @@ alias ..="cd .."
 alias y="yt-dlp"
 alias lg="lazygit"
 alias rp="realpath"
+mcp-cli() { command mcp-cli "$@" 2>/dev/null; }
 
 gh() {
   local repo_path="."

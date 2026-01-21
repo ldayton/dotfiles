@@ -8,6 +8,7 @@
       "Glob",
       "Grep",
       "Read(//**)",
+      "Explore(//**)",
       "Task",
       "WebFetch",
       "WebSearch"
