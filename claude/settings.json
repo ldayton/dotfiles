@@ -18,7 +18,16 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|mcp__.*",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/source/Dippy/bin/dippy-hook"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -29,7 +38,16 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|mcp__.*",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/source/Dippy/bin/dippy-hook"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*",
         "hooks": [
           {
             "type": "command",
