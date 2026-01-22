@@ -108,7 +108,7 @@ claude() {
     cat ~/.claude/CLAUDE.local.md >> ~/.claude/CLAUDE.md 2>/dev/null
     local mcp_args=()
     [[ -f ~/.claude/mcp.local.json ]] && mcp_args=(--mcp-config ~/.claude/mcp.local.json)
-    npx @anthropic-ai/claude-code \
+    command claude \
         "${mcp_args[@]}" \
         --allow-dangerously-skip-permissions  \
         "$@"
