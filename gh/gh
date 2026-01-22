@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# gh wrapper that switches GitHub accounts based on repo's gh.account config
+# Usage: Set `git config gh.account ldayton` in a repo to use that account's token
+
+set -euo pipefail
+
+GH_BINARY="/home/linuxbrew/.linuxbrew/bin/gh"
+
+# Parse -C flag to find repo path
+repo_path="."
+args=("$@")
+for ((i=0; i<${#args[@]}; i++)); do
+    if [[ "${args[i]}" == "-C" && $((i+1)) -lt ${#args[@]} ]]; then
+        repo_path="${args[i+1]}"
+        break
+    fi
+done
+
+# Check for --which flag (diagnostic)
+for arg in "$@"; do
+    if [[ "$arg" == "--which" ]]; then
+        account=$(git -C "$repo_path" config gh.account 2>/dev/null || true)
+        echo "${account:-default}"
+        exit 0
+    fi
+done
+
+# Switch account based on git config
+account=$(git -C "$repo_path" config gh.account 2>/dev/null || true)
+if [[ -n "$account" ]]; then
+    "$GH_BINARY" auth switch --user "$account" 2>/dev/null || true
+fi
+
+exec "$GH_BINARY" "$@"

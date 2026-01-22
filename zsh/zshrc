@@ -36,6 +36,7 @@ if [[ -d "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home" ]]; th
 fi
 
 #--- AI assistants ---#
+export PATH="$HOME/source/dotfiles/gh:$PATH"
 export PATH="$HOME/source/dotfiles/claude:$PATH"
 export PATH="$HOME/.local/bin:$PATH" # agent (cursor)
 
@@ -75,28 +76,6 @@ alias y="yt-dlp"
 alias lg="lazygit"
 alias rp="realpath"
 mcp-cli() { command mcp-cli "$@" 2>/dev/null; }
-
-gh() {
-  local repo_path="."
-  local args=("$@")
-  local which_mode=false
-  for ((i=1; i<=${#args[@]}; i++)); do
-    if [[ "${args[i]}" == "-C" ]]; then
-      repo_path="${args[i+1]}"
-    elif [[ "${args[i]}" == "--which" ]]; then
-      which_mode=true
-    fi
-  done
-  local account=$(git -C "$repo_path" config gh.account 2>/dev/null)
-  if $which_mode; then
-    echo "${account:-default}"
-    return
-  fi
-  case "$account" in
-    ldayton) GH_TOKEN="${GH_TOKEN_LDAYTON}" command gh "$@" ;;
-    *)       command gh "$@" ;;
-  esac
-}
 
 # Claude Code wrapper:
 # - Builds ~/.claude/CLAUDE.md from ~/source/dotfiles/claude/CLAUDE.base.md + ~/.claude/CLAUDE.local.md
