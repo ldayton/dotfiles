@@ -4,12 +4,12 @@ set log ~/.claude/dippy-audit.log
 set log-full
 
 allow-redirect /tmp/**
-allow aws-azure-login *
+allow aws-azure-login
 
-allow mkdir *
-allow pypi *
+allow mkdir
+allow pypi
 
-allow ~/source/bash-oracle/bash-oracle *
+allow ~/source/bash-oracle/bash-oracle
 allow just build
 
 
