@@ -11,6 +11,7 @@ allow pypi
 
 allow ~/source/bash-oracle/bash-oracle
 allow just build
+alias ~/source/gh/gh gh
 
 
 # GitHub MCP read-only operations
