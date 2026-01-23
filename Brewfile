@@ -1,4 +1,6 @@
 # Development Tools
+tap "ldayton/dippy"
+brew "dippy"       # shell parser and linter
 brew "cloc"        # code statistics
 brew "git"         # distributed version control system
 brew "go"          # programming language with built-in concurrency
