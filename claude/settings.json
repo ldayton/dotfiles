@@ -14,5 +14,17 @@
       "WebSearch"
     ]
   },
-  "model": "opus"
+  "model": "opus",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "dippy" }]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "dippy-statusline"
+  }
 }
