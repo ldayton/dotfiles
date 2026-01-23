@@ -1,6 +1,6 @@
 # Development Tools
 tap "ldayton/dippy"
-brew "dippy"       # shell parser and linter
+brew "dippy"       # permission system for Claude Code
 brew "cloc"        # code statistics
 brew "git"         # distributed version control system
 brew "go"          # programming language with built-in concurrency
@@ -40,7 +40,8 @@ brew "awscurl"                # curl wrapper for AWS API calls with sigv4
 brew "awslogs"                # query and stream CloudWatch logs
 brew "azure-cli"              # Microsoft Azure command-line interface
 brew "helm"                   # Kubernetes package manager
-brew "terraform"              # infrastructure as code tool for cloud provisioning
+tap "hashicorp/tap"           # HashiCorp official tap
+brew "hashicorp/tap/terraform" # infrastructure as code tool for cloud provisioning
 
 # Network Tools
 brew "bind"        # includes dig, nslookup, and other DNS utilities
@@ -59,7 +60,6 @@ brew "yt-dlp"      # download videos from YouTube and other sites
 if OS.mac?
   cask "codex"                           # OpenAI's coding assistant
   cask "gcloud-cli"                      # Google Cloud CLI
-  cask "session-manager-plugin"          # AWS Systems Manager Session Manager plugin
   cask "temurin"                         # Eclipse Temurin OpenJDK (latest)
   cask "font-caskaydia-cove-nerd-font"   # Microsoft's modern terminal font with icons
   cask "font-fira-code-nerd-font"        # monospaced font with programming ligatures and icons
