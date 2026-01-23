@@ -4,7 +4,16 @@
 
 set -euo pipefail
 
-GH_BINARY="/home/linuxbrew/.linuxbrew/bin/gh"
+if [[ -x "/opt/homebrew/bin/gh" ]]; then
+    GH_BINARY="/opt/homebrew/bin/gh"
+elif [[ -x "/usr/local/bin/gh" ]]; then
+    GH_BINARY="/usr/local/bin/gh"
+elif [[ -x "/home/linuxbrew/.linuxbrew/bin/gh" ]]; then
+    GH_BINARY="/home/linuxbrew/.linuxbrew/bin/gh"
+else
+    echo "gh not found" >&2
+    exit 1
+fi
 
 # Parse -C flag to find repo path
 repo_path="."
