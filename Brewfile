@@ -56,18 +56,21 @@ brew "imagemagick" # create, edit, compose, or convert bitmap images
 brew "libicns"     # library and tools for manipulating Mac OS icns files
 brew "yt-dlp"      # download videos from YouTube and other sites
 
-# macOS only (casks don't work on Linux)
+# Fonts (casks work on Linux since Homebrew 4.4.17)
+cask "font-caskaydia-cove-nerd-font"   # Microsoft's modern terminal font with icons
+cask "font-fira-code-nerd-font"        # monospaced font with programming ligatures and icons
+cask "font-jetbrains-mono-nerd-font"   # JetBrains IDE font with ligatures and icons
+cask "font-zed-mono-nerd-font"         # Zed editor font with icons
+
+# macOS only (no Linux formula/cask available)
 if OS.mac?
-  cask "codex"                           # OpenAI's coding assistant
-  cask "gcloud-cli"                      # Google Cloud CLI
+  cask "codex"                           # OpenAI's coding assistant (use npm on Linux)
+  cask "gcloud-cli"                      # Google Cloud CLI (use apt/dnf on Linux)
   cask "temurin"                         # Eclipse Temurin OpenJDK (latest)
-  cask "font-caskaydia-cove-nerd-font"   # Microsoft's modern terminal font with icons
-  cask "font-fira-code-nerd-font"        # monospaced font with programming ligatures and icons
-  cask "font-jetbrains-mono-nerd-font"   # JetBrains IDE font with ligatures and icons
-  cask "font-zed-mono-nerd-font"         # Zed editor font with icons
 end
 
 if OS.linux?
   tap "auth0/auth0-cli"
   brew "auth0"                  # Auth0 command-line interface
+  brew "openjdk"                # OpenJDK (alternative to temurin cask)
 end
