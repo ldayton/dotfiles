@@ -77,11 +77,18 @@ alias lg="lazygit"
 alias rp="realpath"
 mcp-cli() { command mcp-cli "$@" 2>/dev/null; }
 
+# Combine config.base.dippy + config.local.dippy
+dippy-config() {
+    mkdir -p ~/.dippy
+    { cat ~/source/dotfiles/dippy/config.base.dippy; echo; cat ~/.dippy/config.local.dippy 2>/dev/null; } | tee ~/.dippy/config
+}
+
 # Claude Code wrapper:
 # - Builds ~/.claude/CLAUDE.md from ~/source/dotfiles/claude/CLAUDE.base.md + ~/.claude/CLAUDE.local.md
 # - Loads MCP config from ~/.claude/mcp.local.json if present
 claude() {
     mkdir -p ~/.claude
+    dippy-config >/dev/null
     cat ~/source/dotfiles/claude/CLAUDE.base.md > ~/.claude/CLAUDE.md
     echo >> ~/.claude/CLAUDE.md
     cat ~/.claude/CLAUDE.local.md >> ~/.claude/CLAUDE.md 2>/dev/null

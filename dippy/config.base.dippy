@@ -1,24 +1,4 @@
-# Global dippy config
-
-set log ~/.claude/dippy-audit.log
-set log-full
-
-allow-redirect /tmp/**
-allow aws-azure-login
-
-allow mkdir
-allow pypi
-
-allow ~/source/bash-oracle/bash-oracle
-allow just build
-alias ~/source/gh/gh gh
-
-
-# GitHub MCP read-only operations
-allow-mcp mcp__github*__get_*
-allow-mcp mcp__github*__list_*
-allow-mcp mcp__github*__search_*
-allow-mcp mcp__github*__*_read
+# Local dippy config (machine-specific overrides)
 
 # Azure DevOps MCP read-only operations
 allow-mcp mcp__azure-devops__core_list_*
@@ -39,3 +19,11 @@ allow-mcp mcp__azure-devops__testplan_list_*
 allow-mcp mcp__azure-devops__testplan_show_*
 allow-mcp mcp__azure-devops__search_*
 allow-mcp mcp__azure-devops__advsec_get_*
+
+# GitHub MCP read-only operations
+allow-mcp mcp__github-*__get_*
+allow-mcp mcp__github-*__list_*
+allow-mcp mcp__github-*__search_*
+allow-mcp mcp__github-*__*_read
+
+allow mkdir

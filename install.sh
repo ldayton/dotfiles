@@ -76,9 +76,5 @@ if [ -f "$DOTFILES/zed/keymap.json" ]; then
     link "$DOTFILES/zed/keymap.json" "$HOME/.config/zed/keymap.json"
 fi
 
-if [ -f "$DOTFILES/dippy/config" ]; then
-    link "$DOTFILES/dippy/config" "$HOME/.dippy/config"
-fi
-
 echo ""
 echo "Dotfiles installed successfully!"
