@@ -5,6 +5,7 @@ brew "cloc"        # code statistics
 brew "git"         # distributed version control system
 brew "go"          # programming language with built-in concurrency
 brew "gh"          # GitHub's official command line tool
+brew "hyperfine"   # command-line benchmarking tool
 brew "just"        # command runner for project-specific tasks
 brew "lazygit"     # simple terminal UI for git commands
 brew "node"        # JavaScript runtime built on V8
