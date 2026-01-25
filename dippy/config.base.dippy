@@ -1,4 +1,8 @@
-# Local dippy config (machine-specific overrides)
+# Global user Dippy configs
+
+allow mkdir
+allow-redirect /tmp/**
+
 
 # Azure DevOps MCP read-only operations
 allow-mcp mcp__azure-devops__core_list_*
@@ -25,5 +29,3 @@ allow-mcp mcp__github-*__get_*
 allow-mcp mcp__github-*__list_*
 allow-mcp mcp__github-*__search_*
 allow-mcp mcp__github-*__*_read
-
-allow mkdir
