@@ -1,5 +1,8 @@
 # Global user Dippy configs
 
+set log ~/.claude/dippy-audit.log
+set log-full
+
 allow mkdir
 allow-redirect /tmp/**
 
