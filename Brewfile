@@ -2,6 +2,7 @@
 tap "ldayton/dippy"
 brew "dippy"       # permission system for Claude Code
 brew "cloc"        # code statistics
+brew "dotnet"
 brew "git"         # distributed version control system
 brew "go"          # programming language with built-in concurrency
 brew "gh"          # GitHub's official command line tool
@@ -11,9 +12,12 @@ brew "lazygit"     # simple terminal UI for git commands
 brew "node"        # JavaScript runtime built on V8
 brew "pnpm"        # fast, disk space efficient package manager
 brew "python"      # interpreted, interactive, object-oriented programming language
+brew "ruby"
 brew "rustup"      # Rust toolchain installer
+brew "typescript"  # TypeScript compiler
 brew "uv"          # extremely fast Python package manager and resolver
 brew "vite"        # next generation frontend tooling
+brew "zig"
 
 # Shell
 brew "atuin"       # magical shell history database with sync
