@@ -1,17 +1,19 @@
 # Languages
-brew "dotnet@9"    # Microsoft's cross-platform .NET development framework
+brew "dart-sdk"    # client-optimized language for multi-platform apps
+brew "dotnet"      # Microsoft's cross-platform .NET development framework
+brew "gcc"         # GNU Compiler Collection for C/C++
 brew "ghc"         # Glasgow Haskell Compiler
-brew "go@1.23"     # programming language with built-in concurrency
-brew "openjdk@21"  # OpenJDK Java development kit
-brew "llvm@18"     # C/C++/Objective-C compiler with clang frontend
+brew "go"          # programming language with built-in concurrency
+brew "llvm"        # C/C++/Objective-C compiler with clang frontend
 brew "lua"         # lightweight, embeddable scripting language
+brew "node"        # JavaScript runtime built on V8
 brew "perl"        # highly capable, feature-rich programming language
-brew "php@8.3"     # general-purpose server-side scripting language
+brew "php"         # general-purpose server-side scripting language
 brew "python"      # latest Python for general development
-brew "python@3.12" # pinned Python version for Tongues
-brew "ruby@3.3"    # dynamic, object-oriented programming language
+brew "ruby"        # dynamic, object-oriented programming language
 brew "rust"        # systems programming language focused on safety and performance
 brew "swift"       # Apple's compiled programming language for all platforms
+cask "temurin"     # Eclipse Temurin OpenJDK distribution
 brew "typescript"  # typed superset of JavaScript that compiles to plain JS
 brew "zig"         # systems programming language with manual memory management
 
