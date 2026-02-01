@@ -13,7 +13,7 @@ brew "python"      # latest Python for general development
 brew "ruby"        # dynamic, object-oriented programming language
 brew "rust"        # systems programming language focused on safety and performance
 brew "swift"       # Apple's compiled programming language for all platforms
-cask "temurin"     # Eclipse Temurin OpenJDK distribution
+brew "openjdk"     # OpenJDK distribution (cross-platform)
 brew "typescript"  # typed superset of JavaScript that compiles to plain JS
 brew "zig"         # systems programming language with manual memory management
 
