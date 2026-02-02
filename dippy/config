@@ -3,6 +3,7 @@
 set log ~/.claude/dippy-audit.log
 set log-full
 
+allow ~/source/dotfiles/gh/gh
 allow mkdir
 allow-redirect /tmp/**
 
