@@ -19,6 +19,7 @@ brew "zig"         # systems programming language with manual memory management
 
 # Development Tools
 tap "ldayton/dippy"
+tap "ldayton/tongues"
 brew "dippy"       # permission system for Claude Code
 brew "cloc"        # code statistics
 brew "git"         # distributed version control system
@@ -28,6 +29,7 @@ brew "just"        # command runner for project-specific tasks
 brew "lazygit"     # simple terminal UI for git commands
 brew "node"        # JavaScript runtime built on V8
 brew "pnpm"        # fast, disk space efficient package manager
+brew "tongues"     # Python source-to-source transpiler
 brew "uv"          # extremely fast Python package manager and resolver
 brew "vite"        # next generation frontend tooling
 
