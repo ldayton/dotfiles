@@ -19,6 +19,7 @@
 - Don't amend commits or use --force
 - Don't use gh --admin or try to bypass rulesets
 - use git -C instead of needlessly changing directories
+- Don't use git stash/pop, there may be other Claude sessions running
 
 # Shell Tools
 - Prefer fd over find

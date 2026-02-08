@@ -1,0 +1,36 @@
+# Global user Dippy configs
+
+set log ~/.claude/dippy-audit.log
+set log-full
+
+allow ~/source/dotfiles/gh/gh
+allow mkdir
+allow-redirect /tmp/**
+
+
+# Azure DevOps MCP read-only operations
+allow-mcp mcp__azure-devops__core_list_*
+allow-mcp mcp__azure-devops__core_get_*
+allow-mcp mcp__azure-devops__work_list_*
+allow-mcp mcp__azure-devops__work_get_*
+allow-mcp mcp__azure-devops__pipelines_get_*
+allow-mcp mcp__azure-devops__pipelines_list_*
+allow-mcp mcp__azure-devops__repo_list_*
+allow-mcp mcp__azure-devops__repo_get_*
+allow-mcp mcp__azure-devops__repo_search_*
+allow-mcp mcp__azure-devops__wit_list_*
+allow-mcp mcp__azure-devops__wit_get_*
+allow-mcp mcp__azure-devops__wit_my_*
+allow-mcp mcp__azure-devops__wiki_list_*
+allow-mcp mcp__azure-devops__wiki_get_*
+allow-mcp mcp__azure-devops__testplan_list_*
+allow-mcp mcp__azure-devops__testplan_show_*
+allow-mcp mcp__azure-devops__search_*
+allow-mcp mcp__azure-devops__advsec_get_*
+
+# GitHub MCP read-only operations
+allow-mcp mcp__github-*__get_*
+allow-mcp mcp__github-*__list_*
+allow-mcp mcp__github-*__search_*
+allow-mcp mcp__github-*__*_read
+

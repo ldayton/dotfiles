@@ -19,21 +19,41 @@
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "dippy" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dippy"
+          }
+        ]
       },
       {
         "matcher": "mcp__.*",
-        "hooks": [{ "type": "command", "command": "dippy" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dippy"
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "dippy" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dippy"
+          }
+        ]
       },
       {
         "matcher": "mcp__.*",
-        "hooks": [{ "type": "command", "command": "dippy" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dippy"
+          }
+        ]
       }
     ]
   },

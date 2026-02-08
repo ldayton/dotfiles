@@ -93,5 +93,6 @@
     "editor.defaultFormatter": "redhat.vscode-yaml"
   },
   "claudeCode.preferredLocation": "panel",
-  "extensions.ignoreRecommendations": true
+  "extensions.ignoreRecommendations": true,
+  "zig.zls.enabled": "off"
 }

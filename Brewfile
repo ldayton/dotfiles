@@ -1,11 +1,11 @@
 # Languages
 brew "dart-sdk"    # client-optimized language for multi-platform apps
 brew "dotnet"      # Microsoft's cross-platform .NET development framework
-brew "gcc"         # GNU Compiler Collection for C/C++
 brew "ghc"         # Glasgow Haskell Compiler
 brew "go"          # programming language with built-in concurrency
 brew "llvm"        # C/C++/Objective-C compiler with clang frontend
 brew "lua"         # lightweight, embeddable scripting language
+brew "mono"        # cross-platform .NET runtime with mcs C# compiler
 brew "node"        # JavaScript runtime built on V8
 brew "perl"        # highly capable, feature-rich programming language
 brew "php"         # general-purpose server-side scripting language
@@ -17,13 +17,32 @@ brew "openjdk"     # OpenJDK distribution (cross-platform)
 brew "typescript"  # typed superset of JavaScript that compiles to plain JS
 brew "zig"         # systems programming language with manual memory management
 
+# Pinned versions for Tongues compatibility
+brew "dotnet@8"    # .NET 8 for Tongues C# backend
+brew "gcc@13"      # GCC 13 for Tongues C backend
+brew "go@1.21"     # Go 1.21 for Tongues Go backend
+brew "node@20"     # Node 20 for Tongues JS/TS backend (closest to Docker's 21)
+brew "openjdk@21"  # Java 21 for Tongues Java backend
+brew "php@8.3"     # PHP 8.3 for Tongues PHP backend
+brew "python@3.12" # Python 3.12 for Tongues
+brew "ruby@3.3"    # Ruby 3.3 for Tongues Ruby backend
+brew "util-linux"
+
+# Formatters (for Tongues codegen)
+brew "clang-format"   # C/C++/Objective-C code formatter
+brew "php-cs-fixer"   # PHP coding standards fixer
+brew "stylua"         # Lua code formatter
+brew "swiftformat"    # Swift code formatter
+
 # Development Tools
 tap "ldayton/dippy"
 tap "ldayton/tongues"
 brew "dippy"       # permission system for Claude Code
+brew "direnv"      # load/unload environment variables per directory
 brew "cloc"        # code statistics
 brew "git"         # distributed version control system
 brew "gh"          # GitHub's official command line tool
+brew "rustup"      # Rust toolchain installer and version manager
 brew "hyperfine"   # command-line benchmarking tool
 brew "just"        # command runner for project-specific tasks
 brew "lazygit"     # simple terminal UI for git commands
