@@ -26,6 +26,7 @@ brew "openjdk@21"  # Java 21 for Tongues Java backend
 brew "php@8.3"     # PHP 8.3 for Tongues PHP backend
 brew "python@3.12" # Python 3.12 for Tongues
 brew "ruby@3.3"    # Ruby 3.3 for Tongues Ruby backend
+brew "zig@0.14"    # Zig 0.14 for Tongues Zig backend
 brew "util-linux"
 
 # Formatters (for Tongues codegen)
