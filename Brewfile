@@ -32,6 +32,7 @@ brew "util-linux"
 # Formatters (for Tongues codegen)
 brew "clang-format"   # C/C++/Objective-C code formatter
 brew "php-cs-fixer"   # PHP coding standards fixer
+brew "prettier"       # opinionated code formatter for JS/TS/CSS/HTML/JSON
 brew "stylua"         # Lua code formatter
 brew "swiftformat"    # Swift code formatter
 
