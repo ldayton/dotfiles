@@ -1,5 +1,6 @@
 # Meta
 - "note" means add to this file (CLAUDE.md)
+- "amh" means "answer me here", as in don't do anything, but write your response in the chat so I can give feedback
 - CLAUDE.md is generated from ~/source/dotfiles/claude/CLAUDE.base.md + ~/.claude/CLAUDE.local.md
 - Base contains universal preferences; local contains work/machine-specific config
 - "dotfiles" refers to ~/source/dotfiles

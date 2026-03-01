@@ -75,6 +75,7 @@ alias ..="cd .."
 alias y="yt-dlp"
 alias lg="lazygit"
 alias rp="realpath"
+cloc() { command cloc --vcs=git "$@"; }
 mcp-cli() { command mcp-cli "$@" 2>/dev/null; }
 
 # Combine config.base.dippy + config.local.dippy
