@@ -94,5 +94,6 @@
   },
   "claudeCode.preferredLocation": "panel",
   "extensions.ignoreRecommendations": true,
-  "zig.zls.enabled": "off"
+  "zig.zls.enabled": "off",
+  "chat.disableAIFeatures": true
 }
