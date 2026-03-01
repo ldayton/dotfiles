@@ -1,7 +1,7 @@
 [user]
 	name = Lily Dayton
 [pull]
-	rebase = false
+	rebase = true
 [alias]
 	co = checkout
 	ci = commit
