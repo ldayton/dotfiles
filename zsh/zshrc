@@ -35,6 +35,32 @@ if [[ -d "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home" ]]; th
     export PATH=$JAVA_HOME/bin:$PATH
 fi
 
+#--- node environment (nvm, auto-switch per .nvmrc) ---#
+# Homebrew installs a newer `node` than projects pin (e.g. Loom pins node 22 via .nvmrc, matching
+# CI/prod). Source nvm and switch to the nearest .nvmrc on cd + at startup, so the pinned version is
+# used automatically instead of brew's default. `nvm use` prepends its node to PATH, beating brew.
+export NVM_DIR="$HOME/.nvm"
+if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+    . "$NVM_DIR/nvm.sh"
+    autoload -U add-zsh-hook
+    load-nvmrc() {
+        local nvmrc_path nvmrc_node_version
+        nvmrc_path="$(nvm_find_nvmrc)"
+        if [[ -n "$nvmrc_path" ]]; then
+            nvmrc_node_version="$(nvm version "$(cat "$nvmrc_path")")"
+            if [[ "$nvmrc_node_version" == "N/A" ]]; then
+                nvm install
+            elif [[ "$nvmrc_node_version" != "$(nvm version)" ]]; then
+                nvm use --silent
+            fi
+        elif [[ -n "$(PWD=$OLDPWD nvm_find_nvmrc)" && "$(nvm version)" != "$(nvm version default)" ]]; then
+            nvm use default --silent
+        fi
+    }
+    add-zsh-hook chpwd load-nvmrc
+    load-nvmrc
+fi
+
 #--- AI assistants ---#
 export PATH="$HOME/source/dotfiles/gh:$PATH"
 export PATH="$HOME/source/dotfiles/claude:$PATH"
@@ -152,6 +178,7 @@ PY
     command agent "$@"
 }
 pypi() { curl -sS "https://pypi.org/pypi/$1/json" | jq -r .info.version; }
+promptfoo() { npx promptfoo@latest "$@"; }
 cloc() { command cloc --vcs=git "$@"; }
 
 #--- fix key bindings ---#
