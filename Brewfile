@@ -41,6 +41,7 @@ tap "ldayton/dippy"
 tap "ldayton/tongues"
 brew "dippy"       # permission system for Claude Code
 brew "direnv"      # load/unload environment variables per directory
+brew "fnm"         # fast Node.js version manager (auto-switches per .nvmrc)
 brew "cloc"        # code statistics
 brew "git"         # distributed version control system
 brew "gh"          # GitHub's official command line tool
