@@ -34,10 +34,15 @@ for arg in "$@"; do
     fi
 done
 
-# Switch account based on git config
+# Resolve the account's token per-process via GH_TOKEN instead of `gh auth switch`: switching
+# mutates the shared hosts.yml active account, so concurrent sessions on different repos flip it
+# under each other mid-request (intermittent 401s). `gh auth token --user` is read-only.
 account=$(git -C "$repo_path" config gh.account 2>/dev/null || true)
 if [[ -n "$account" ]]; then
-    "$GH_BINARY" auth switch --user "$account" 2>/dev/null || true
+    token=$("$GH_BINARY" auth token --user "$account" 2>/dev/null || true)
+    if [[ -n "$token" ]]; then
+        export GH_TOKEN="$token"
+    fi
 fi
 
 exec "$GH_BINARY" "$@"
