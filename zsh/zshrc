@@ -41,6 +41,14 @@ fi
 # pinned version is used automatically instead of brew's default. (Replaced nvm: ~70ms vs ~1.2s.)
 if command -v fnm &> /dev/null; then
     eval "$(fnm env --use-on-cd --version-file-strategy recursive)"
+    # `nvm` muscle-memory shim → fnm: the subcommands overlap, so translate the few I still type.
+    nvm() {
+        case "$1" in
+            ls|list) shift; fnm list "$@" ;;
+            "") fnm --help ;;
+            *) fnm "$@" ;;
+        esac
+    }
 fi
 
 #--- AI assistants ---#

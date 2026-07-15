@@ -1,4 +1,7 @@
 {
+  "env": {
+    "CLAUDE_CODE_SHELL": "/bin/bash"
+  },
   "attribution": {
     "commit": "",
     "pr": ""
@@ -59,9 +62,11 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "dippy-statusline"
+    "command": "dippy-statusline",
+    "refreshInterval": 5
   },
   "effortLevel": "high",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "skipAutoPermissionPrompt": true
