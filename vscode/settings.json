@@ -95,5 +95,8 @@
   "claudeCode.preferredLocation": "panel",
   "extensions.ignoreRecommendations": true,
   "zig.zls.enabled": "off",
-  "chat.disableAIFeatures": true
+  "chat.disableAIFeatures": true,
+  "remote.SSH.remotePlatform": {
+    "lilyd-lx": "linux"
+  }
 }
