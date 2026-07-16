@@ -15,3 +15,8 @@ format = "on [$ssh_symbol$hostname]($style) "
 # Show duration of the previous command when it took >= 2s.
 [cmd_duration]
 min_time = 2000
+
+# Default format minus the credential-expiration countdown/[X] — it tracks the 1h SSO access
+# token, which self-renews via the refresh token, so the alarm is noise.
+[aws]
+format = 'on [$symbol($profile )(\($region\) )]($style)'
