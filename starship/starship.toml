@@ -1,11 +1,16 @@
 # Shared starship config — pins the module behavior that used to drift between machines.
 
-# Username + hostname render only over SSH: remote prompts keep the "you are not local" cue.
+# Directory first; $all fills in every module not explicitly placed, in default order.
+format = "$directory$hostname$all"
+
+# Hostname renders only over SSH: remote prompts keep the "you are not local" cue.
+# Username is dropped entirely — it's constant, the hostname alone carries the signal.
 [username]
-show_always = false
+disabled = true
 
 [hostname]
 ssh_only = true
+format = "on [$ssh_symbol$hostname]($style) "
 
 # Show duration of the previous command when it took >= 2s.
 [cmd_duration]
