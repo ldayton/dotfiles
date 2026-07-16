@@ -54,6 +54,10 @@ if [ -f "$DOTFILES/atuin/config.toml" ]; then
     link "$DOTFILES/atuin/config.toml" "$HOME/.config/atuin/config.toml"
 fi
 
+if [ -f "$DOTFILES/starship/starship.toml" ]; then
+    link "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
+fi
+
 if [ -f "$DOTFILES/claude/settings.json" ]; then
     mkdir -p "$HOME/.claude"
     link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"

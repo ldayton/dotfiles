@@ -1,0 +1,12 @@
+# Shared starship config — pins the module behavior that used to drift between machines.
+
+# Username + hostname render only over SSH: remote prompts keep the "you are not local" cue.
+[username]
+show_always = false
+
+[hostname]
+ssh_only = true
+
+# Show duration of the previous command when it took >= 2s.
+[cmd_duration]
+min_time = 2000
