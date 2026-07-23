@@ -119,7 +119,8 @@ claude() {
 
 # Cursor Agent CLI wrapper:
 # - Cursor Agent reads MCP config from .cursor/mcp.json or ~/.cursor/mcp.json
-# - Keep Claude + Cursor in sync (Claude is often the superset)
+# - Symlinks Cursor's config to Claude's so the two stay identical; if Cursor already
+#   owns a real file, merges in any servers it is missing instead
 agent() {
     mkdir -p ~/.cursor
     local claude_mcp="$HOME/.claude/mcp.local.json"
