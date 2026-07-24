@@ -8,6 +8,8 @@
   },
   "includeCoAuthoredBy": false,
   "permissions": {
+    "defaultMode": "bypassPermissions",
+    "skipDangerousModePermissionPrompt": true,
     "allow": [
       "Glob",
       "Grep",
@@ -68,8 +70,5 @@
   },
   "effortLevel": "high",
   "tui": "fullscreen",
-  "skipDangerousModePermissionPrompt": true,
-  "skipWorkflowUsageWarning": true,
-  "theme": "dark",
-  "skipAutoPermissionPrompt": true
+  "theme": "dark"
 }
