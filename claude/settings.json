@@ -8,8 +8,6 @@
   },
   "includeCoAuthoredBy": false,
   "permissions": {
-    "defaultMode": "bypassPermissions",
-    "skipDangerousModePermissionPrompt": true,
     "allow": [
       "Glob",
       "Grep",
@@ -18,7 +16,9 @@
       "Task",
       "WebFetch",
       "WebSearch"
-    ]
+    ],
+    "defaultMode": "bypassPermissions",
+    "skipDangerousModePermissionPrompt": true
   },
   "model": "fable",
   "hooks": {
@@ -70,5 +70,6 @@
   },
   "effortLevel": "high",
   "tui": "fullscreen",
-  "theme": "dark"
+  "theme": "dark",
+  "skipDangerousModePermissionPrompt": true
 }
