@@ -70,6 +70,5 @@
   },
   "effortLevel": "high",
   "tui": "fullscreen",
-  "theme": "dark",
-  "skipDangerousModePermissionPrompt": true
+  "theme": "dark"
 }
