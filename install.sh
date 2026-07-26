@@ -73,6 +73,20 @@ if [ -f "$DOTFILES/claude/settings.json" ]; then
     link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
 fi
 
+# ~/.claude/settings.json is a symlink into this repo, and Claude Code writes the current
+# model back into it every time you switch — which would leave the repo permanently dirty
+# with a value that is per-machine anyway. There is no user-level settings.local.json to
+# escape into (that file is project-scoped), so `model` is stripped at stage time instead:
+# the working file keeps whatever you picked, git never sees the key. Filters are per-clone
+# config, not committed, so this has to be set here rather than in .gitattributes alone.
+if command -v jq >/dev/null 2>&1; then
+    git -C "$DOTFILES" config filter.claude-settings.clean "jq --indent 2 'del(.model)'"
+    git -C "$DOTFILES" config filter.claude-settings.smudge cat
+    echo "  ✓ Configured claude-settings filter (keeps 'model' out of git)"
+else
+    echo "  ! jq not found — 'model' changes will show as repo modifications"
+fi
+
 if [ -f "$DOTFILES/vscode/settings.json" ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
         VSCODE_DIR="$HOME/Library/Application Support/Code/User"
