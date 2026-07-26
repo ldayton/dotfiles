@@ -45,4 +45,18 @@ if [[ -n "$account" ]]; then
     fi
 fi
 
+# Optional local policy hook. Same base+local split as CLAUDE.md, zshrc and the dippy
+# config: this repo stays portable, and anything employer-specific lives outside it in a
+# private overlay. The hook defines gh_policy_check and returns non-zero to refuse the
+# command, having printed its own explanation; sourcing it here means it can see $account
+# and $GH_BINARY without them being passed around.
+GH_POLICY="${GH_POLICY:-$HOME/.config/gh-wrapper/policy.sh}"
+if [[ -f "$GH_POLICY" ]]; then
+    # shellcheck source=/dev/null
+    source "$GH_POLICY"
+    if declare -F gh_policy_check >/dev/null; then
+        gh_policy_check "$@" || exit $?
+    fi
+fi
+
 exec "$GH_BINARY" "$@"
