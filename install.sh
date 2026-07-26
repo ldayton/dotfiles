@@ -86,6 +86,18 @@ if command -v jq >/dev/null 2>&1; then
 else
     echo "  ! jq not found — 'model' changes will show as repo modifications"
 fi
+# The filter keeps `model` out of every commit, but git cannot use its stat cache through
+# a filter, so the file still reads as modified until something re-hashes it. skip-worktree
+# silences that. Both are wanted: the filter is the guarantee (nothing bad is committable
+# even if this flag is later cleared), skip-worktree is the quiet.
+#
+# The cost, and it is a real one: while this flag is set, git ignores the file entirely. To
+# change settings.json deliberately, or if a pull reports it would be overwritten:
+#     git update-index --no-skip-worktree claude/settings.json
+#     ... edit / pull / commit ...
+#     git update-index --skip-worktree claude/settings.json
+git -C "$DOTFILES" update-index --skip-worktree claude/settings.json 2>/dev/null \
+    && echo "  ✓ settings.json marked skip-worktree (model switches stay out of git status)"
 
 if [ -f "$DOTFILES/vscode/settings.json" ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
