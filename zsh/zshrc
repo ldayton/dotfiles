@@ -36,8 +36,8 @@ if [[ -d "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home" ]]; th
 fi
 
 #--- node environment (fnm, auto-switch per .nvmrc) ---#
-# Homebrew installs a newer `node` than projects pin (e.g. Loom pins node 22 via .nvmrc, matching
-# CI/prod). fnm reads the nearest .nvmrc on cd + at startup and prepends that node to PATH, so the
+# Homebrew installs a newer `node` than projects tend to pin via .nvmrc to match their CI/prod.
+# fnm reads the nearest .nvmrc on cd + at startup and prepends that node to PATH, so the
 # pinned version is used automatically instead of brew's default. (Replaced nvm: ~70ms vs ~1.2s.)
 if command -v fnm &> /dev/null; then
     eval "$(fnm env --use-on-cd --version-file-strategy recursive)"
@@ -102,72 +102,17 @@ dippy-config() {
 
 # Claude Code wrapper:
 # - Builds ~/.claude/CLAUDE.md from ~/source/dotfiles/claude/CLAUDE.base.md + ~/.claude/CLAUDE.local.md
-# - Loads MCP config from ~/.claude/mcp.local.json if present
 claude() {
     mkdir -p ~/.claude
     dippy-config >/dev/null
     cat ~/source/dotfiles/claude/CLAUDE.base.md > ~/.claude/CLAUDE.md
     echo >> ~/.claude/CLAUDE.md
     cat ~/.claude/CLAUDE.local.md >> ~/.claude/CLAUDE.md 2>/dev/null
-    local mcp_args=()
-    [[ -f ~/.claude/mcp.local.json ]] && mcp_args=(--mcp-config ~/.claude/mcp.local.json)
     command claude \
-        "${mcp_args[@]}" \
         --allow-dangerously-skip-permissions  \
         "$@"
 }
 
-# Cursor Agent CLI wrapper:
-# - Cursor Agent reads MCP config from .cursor/mcp.json or ~/.cursor/mcp.json
-# - Symlinks Cursor's config to Claude's so the two stay identical; if Cursor already
-#   owns a real file, merges in any servers it is missing instead
-agent() {
-    mkdir -p ~/.cursor
-    local claude_mcp="$HOME/.claude/mcp.local.json"
-    local cursor_mcp="$HOME/.cursor/mcp.json"
-
-    if [[ -f "$claude_mcp" ]]; then
-        # If Cursor has no config, just reuse Claude's.
-        if [[ ! -e "$cursor_mcp" ]]; then
-            ln -s "$claude_mcp" "$cursor_mcp" 2>/dev/null || cp "$claude_mcp" "$cursor_mcp"
-        # If Cursor has its own config file, merge in any missing MCP servers from Claude.
-        elif [[ ! -L "$cursor_mcp" ]]; then
-            python3 - "$cursor_mcp" "$claude_mcp" <<'PY' >/dev/null 2>&1
-import json
-import shutil
-import sys
-import time
-from pathlib import Path
-
-cursor_path = Path(sys.argv[1]).expanduser()
-claude_path = Path(sys.argv[2]).expanduser()
-
-try:
-    cursor = json.loads(cursor_path.read_text())
-except Exception:
-    cursor = {}
-
-claude = json.loads(claude_path.read_text())
-
-cursor_servers = cursor.get("mcpServers") or {}
-claude_servers = claude.get("mcpServers") or {}
-
-# Cursor entries win on conflicts (lets you override tokens/settings there)
-merged_servers = dict(claude_servers)
-merged_servers.update(cursor_servers)
-
-merged = dict(cursor)
-merged["mcpServers"] = merged_servers
-
-if merged != cursor:
-    backup = cursor_path.with_name(cursor_path.name + f".bak.{int(time.time())}")
-    shutil.copy2(cursor_path, backup)
-    cursor_path.write_text(json.dumps(merged, indent=2, sort_keys=False) + "\n")
-PY
-        fi
-    fi
-    command agent "$@"
-}
 pypi() { curl -sS "https://pypi.org/pypi/$1/json" | jq -r .info.version; }
 promptfoo() { npx promptfoo@latest "$@"; }
 cloc() { command cloc --vcs=git "$@"; }

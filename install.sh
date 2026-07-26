@@ -11,6 +11,14 @@ link() {
     local src="$1"
     local dest="$2"
 
+    # `ln -s` succeeds on a target that does not exist, so a source removed from the repo
+    # installs as a dangling symlink that nothing reports until something reads through it.
+    # That is how ~/.claude/statusline.py survived the statusline moving into dippy.
+    if [ ! -e "$src" ]; then
+        echo "  ✗ MISSING SOURCE: $src (not linking)"
+        return 1
+    fi
+
     # Create parent directory if needed
     mkdir -p "$(dirname "$dest")"
 
@@ -31,7 +39,9 @@ link() {
 
     # Create symlink
     ln -s "$src" "$dest"
-    # Make immutable if possible (Linux: chattr, macOS: chflags -h for symlinks)
+    # Make immutable where the filesystem allows it. Real on macOS (chflags -h acts on the
+    # link itself); a no-op on WSL, where chattr cannot read or set flags on a symlink at
+    # all -- so do not count on these links being write-protected on Linux.
     chattr +i "$dest" 2>/dev/null || chflags -h uchg "$dest" 2>/dev/null || true
     echo "  ✓ Linked $dest"
 }
@@ -61,7 +71,6 @@ fi
 if [ -f "$DOTFILES/claude/settings.json" ]; then
     mkdir -p "$HOME/.claude"
     link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
-    link "$DOTFILES/claude/statusline.py" "$HOME/.claude/statusline.py"
 fi
 
 if [ -f "$DOTFILES/vscode/settings.json" ]; then
