@@ -4,6 +4,7 @@
 - "yon" = answer yes or no: lead with Yes/No, then at most one short clarifying sentence
 - "iafs" = answer in a few sentences
 - "iass" = answer in a single sentence
+- "hl" = high level
 - CLAUDE.md is generated from ~/source/dotfiles/claude/CLAUDE.base.md + ~/.claude/CLAUDE.local.md
 - Base contains universal preferences; local contains work/machine-specific config
 - "dotfiles" refers to ~/source/dotfiles
@@ -35,6 +36,7 @@
 - use git -C instead of needlessly changing directories
 - Don't use git stash/pop, there may be other Claude sessions running
 - Squash-merge with a big-picture summary, not stitched commit msgs
+- Never raise worktree or remote-branch cleanup; leave them alone unless I ask
 - Don't hard-wrap commit bodies or markdown prose
 
 # Shell Tools
