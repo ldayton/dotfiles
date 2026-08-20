@@ -28,16 +28,6 @@ command -v jq >/dev/null 2>&1 || {
 
 mkdir -p "$(dirname "$DEST")"
 
-# Keys Claude Code writes back into settings.json itself. Carried across a rebuild so that
-# switching model does not silently revert the next time a shell starts. Anything not listed
-# here is owned by the base and the overlay, and is meant to be reset on every build.
-CARRIED_KEYS='{model}'
-
-carried='{}'
-if [[ -f "$DEST" ]]; then
-    carried="$(jq -c "$CARRIED_KEYS | with_entries(select(.value != null))" "$DEST" 2>/dev/null || echo '{}')"
-fi
-
 overlay='{}'
 if [[ -f "$OVERLAY" ]]; then
     jq -e . "$OVERLAY" >/dev/null 2>&1 || {
@@ -47,10 +37,27 @@ if [[ -f "$OVERLAY" ]]; then
     overlay="$(jq -c . "$OVERLAY")"
 fi
 
-# Later wins: base, then the private overlay, then what the app itself last wrote. `mv` rather
-# than `>` so a failure part-way cannot leave a truncated settings file behind, and so this is
-# safe when two shells start at once. It also replaces the old symlink on an existing machine.
-tmp="$(mktemp)"
+# What the app itself has written is carried across, minus anything the base or the overlay
+# names. Ownership by exclusion rather than an allowlist of known keys: Claude Code rewrites
+# this file wholesale -- key order changes between writes, which is the signature -- so an
+# allowlist silently drops every setting it has not heard of, including ones added by a future
+# release. Under this rule the repo stays authoritative for what it declares, and anything else
+# the app records simply survives.
+#
+# Ownership is top level. A key the base declares is owned entirely, nested contents included,
+# so `permissions` cannot be edited out from under the repo.
+carried='{}'
+if [[ -f "$DEST" ]]; then
+    owned="$(jq -s -c '(.[0] * .[1]) | keys' "$BASE" <(printf '%s' "$overlay"))"
+    carried="$(jq -c --argjson owned "$owned" \
+        'with_entries(select(.key as $k | $owned | index($k) | not))' "$DEST" 2>/dev/null || echo '{}')"
+fi
+
+# Later wins: base, then the private overlay, then the app's unowned keys. Written to a temp
+# file in the same directory and renamed, so a failure part-way cannot leave a truncated
+# settings file and a concurrent reader never sees one. It also replaces the old symlink on a
+# machine that still has it.
+tmp="$(mktemp "$(dirname "$DEST")/.settings.XXXXXX")"
 trap 'rm -f "$tmp"' EXIT
 jq -s --indent 2 '.[0] * .[1] * .[2]' \
     "$BASE" \
