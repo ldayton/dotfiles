@@ -20,9 +20,9 @@
 # directories and nowhere else. The module's symbolic modes have no "directories only"
 # form: g+rwXs limits the execute bit to directories via X, but applies s to every regular
 # file too. That turns each of the prefix's binaries into a setgid executable while g+w
-# leaves them group-writable, so any local account on the machine -- a CI runner or a
-# remote-session user, on a shared box there is usually one -- can enter the group through
-# any of them and rewrite the rest, including the login shell of whoever has sudo.
+# leaves them group-writable, so any local account on the machine can enter the group
+# through any one of them and then rewrite the rest, including the login shell of whoever
+# holds sudo.
 - name: Setgid and group-write on directories, so new packages inherit the group
   ansible.builtin.command:
     cmd: find {{ brew_prefix }} -type d ! -perm -g+ws -printf . -exec chmod g+rwxs {} +
