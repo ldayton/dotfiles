@@ -189,9 +189,8 @@
   ansible.builtin.set_fact:
     dev_user_git_host_keys: "{{ dev_user_git_host_keys or (dev_user_git_host_meta.json.ssh_keys | default([])) }}"
 
-# Only when something here actually speaks SSH. The dotfiles clone is HTTPS by default and needs no
-# host key, but an overlay is private by nature and an SSH dotfiles URL is a supported override — so
-# the refusal follows the URLs rather than firing on every run.
+# Only when something here actually speaks SSH: the dotfiles clone is HTTPS by default, while an
+# overlay is private by nature and an SSH dotfiles URL is a supported override.
 - name: Does anything here clone over SSH?
   ansible.builtin.set_fact:
     dev_user_wants_ssh: "{{ (dev_user_dotfiles_repo is search('^(ssh://|[^/]+@)'))

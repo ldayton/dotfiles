@@ -3,31 +3,24 @@
 # ~/.claude, shell and atuin history -- lands inside its home and is shared with nobody.
 dev_user_name: lily
 dev_user_comment: "Lily Dayton"
-# Empty by default. Sudo on a box that belongs to other things is a grant worth naming per
-# host rather than inheriting: `-e '{"dev_user_groups":["sudo"]}'`, or set it here for a
-# machine that is genuinely yours alone.
+# Sudo on a box that belongs to other things is a grant worth naming per host.
 dev_user_groups: []
 
 # ubuntu logs in on brew's zsh rather than /usr/bin/zsh, so the same choice here keeps the
 # two accounts on one shell. It does mean login depends on dev_user_brew_prefix being readable.
 dev_user_shell: "{{ dev_user_brew_prefix }}/bin/zsh"
 
-# Point this at a larger or faster volume when the root one is small: useradd creates missing
-# parents, so any path works. Instance-store volumes are wiped on stop/start and on any instance
-# replacement, so a home on one is disposable by construction — keys, tokens and history included.
+# Point this at a larger volume when the root one is small. An instance store is wiped on stop/start,
+# so a home on one is disposable by construction — keys, tokens and history included.
 #
-# The requirement below is on by default and is the reason: a volume mounted `nofail` that does not
-# come up leaves its mountpoint as an ordinary directory on the root filesystem, so the home is
-# created there instead and nothing says so. With the default home that check is trivially true, so
-# it costs nothing until the day somebody points this at a volume and the volume is not there.
-# Set it false for a machine where the root volume is genuinely the intended home.
+# The requirement below is why it is on: `nofail` turns a volume that did not come up into an
+# ordinary directory, and the home lands on the root filesystem with nothing to say so. Set it false
+# where the root volume is genuinely the intended home.
 dev_user_home: "/home/{{ dev_user_name }}"
 dev_user_home_require_separate_fs: true
-# HTTPS, not SSH. This repository is public, so a read-only clone needs no credential at all —
-# whereas SSH authenticates whether or not the other end is public, which made provisioning any new
-# box wait on somebody registering a freshly generated key before setup could finish. Push access is
-# a separate errand the account can gain later; it is not a prerequisite for being configured.
-# Override with an SSH URL for a private fork, and the host-key pinning below covers it.
+# HTTPS, not SSH: this repository is public, and SSH authenticates whether or not the other end is,
+# so an SSH URL made provisioning wait on somebody registering a freshly generated key. Override
+# with an SSH URL for a private fork; the host-key pinning below covers it.
 dev_user_dotfiles_repo: https://github.com/ldayton/dotfiles.git
 # A variable for the same reason the overlay's is: pinning the branch, or provisioning from a
 # commit that is not on main, should not require editing the task. Hardcoding it meant the role
@@ -77,16 +70,12 @@ dev_user_git_host_keys: []
 # made traversable, and so no other local account can pre-place the path.
 dev_user_brew_stage_dir: /var/lib/dev-user-role
 
-# Whether to install the Brewfile at all. Off by default: provisioning an account and populating a
-# machine are different errands, and forty-odd formulae is minutes of side effect for something
-# nobody asked for. Ask for it in the same breath as the account:
-#
-#   ansible-playbook ... -e dev_user_brewfile=true -e dev_user_claude_code=true
+# Off by default: provisioning an account and populating a machine are different errands, and
+# forty-odd formulae is minutes of side effect. Ask for it: `-e dev_user_brewfile=true`.
 dev_user_brewfile: false
 
-# Claude Code, installed into the account's own home by Anthropic's native installer. Off by
-# default for the reason the Brewfile is: installing software is not the same act as making an
-# account to install it under. Set the
+# Claude Code, installed into the account's own home by Anthropic's native installer. Off for the
+# reason the Brewfile is. Set the
 # channel to "stable" for the roughly week-old release, or to an exact version to pin one; empty
 # means the default channel. A native install updates itself in the background, which is right for
 # something used interactively and wrong for anything that has to be reproducible -- pin it if this
