@@ -3,21 +3,31 @@
 # ~/.claude, shell and atuin history -- lands inside its home and is shared with nobody.
 dev_user_name: lily
 dev_user_comment: "Lily Dayton"
-dev_user_groups: [sudo]
+# Sudo on a box that belongs to other things is a grant worth naming per host.
+dev_user_groups: []
+
+# Passwordless sudo, written as a drop-in rather than group membership: the grant is then one
+# file to read and one file to delete, and visudo checks it before it lands. Off for the same
+# reason the groups above are empty -- an account that reaches root without re-authenticating is
+# a decision per host. Setting it false removes a grant an earlier run left behind.
+dev_user_sudo_nopasswd: false
 
 # ubuntu logs in on brew's zsh rather than /usr/bin/zsh, so the same choice here keeps the
 # two accounts on one shell. It does mean login depends on dev_user_brew_prefix being readable.
 dev_user_shell: "{{ dev_user_brew_prefix }}/bin/zsh"
 
-# Point this at a larger or faster volume when the root one is small: useradd creates missing
-# parents, so any path works. Two things to know before doing that. Instance-store volumes are
-# wiped on stop/start and on any instance replacement, so a home on one is disposable by
-# construction. And a volume mounted `nofail` that does not come up leaves its mountpoint as an
-# ordinary directory on the root filesystem, so the home is created there instead, silently --
-# set dev_user_home_require_separate_fs when the whole point was to be off the root volume.
+# Point this at a larger volume when the root one is small. An instance store is wiped on stop/start,
+# so a home on one is disposable by construction — keys, tokens and history included.
+#
+# The requirement below is why it is on: `nofail` turns a volume that did not come up into an
+# ordinary directory, and the home lands on the root filesystem with nothing to say so. Set it false
+# where the root volume is genuinely the intended home.
 dev_user_home: "/home/{{ dev_user_name }}"
-dev_user_home_require_separate_fs: false
-dev_user_dotfiles_repo: git@github.com:ldayton/dotfiles.git
+dev_user_home_require_separate_fs: true
+# HTTPS, not SSH: this repository is public, and SSH authenticates whether or not the other end is,
+# so an SSH URL made provisioning wait on somebody registering a freshly generated key. Override
+# with an SSH URL for a private fork; the host-key pinning below covers it.
+dev_user_dotfiles_repo: https://github.com/ldayton/dotfiles.git
 # A variable for the same reason the overlay's is: pinning the branch, or provisioning from a
 # commit that is not on main, should not require editing the task. Hardcoding it meant the role
 # could only ever clone main, which CI found the moment it provisioned from a pull request.
@@ -66,12 +76,12 @@ dev_user_git_host_keys: []
 # made traversable, and so no other local account can pre-place the path.
 dev_user_brew_stage_dir: /var/lib/dev-user-role
 
-# Whether to install the Brewfile at all. On by default, because a dev account without its tools
-# is half an account -- but installing forty-odd formulae is minutes, and provisioning an account
-# is not always the same errand as populating a machine.
-dev_user_brewfile: true
+# Off by default: provisioning an account and populating a machine are different errands, and
+# forty-odd formulae is minutes of side effect. Ask for it: `-e dev_user_brewfile=true`.
+dev_user_brewfile: false
 
-# Claude Code, installed into the account's own home by Anthropic's native installer. Set the
+# Claude Code, installed into the account's own home by Anthropic's native installer. Off for the
+# reason the Brewfile is. Set the
 # channel to "stable" for the roughly week-old release, or to an exact version to pin one; empty
 # means the default channel. A native install updates itself in the background, which is right for
 # something used interactively and wrong for anything that has to be reproducible -- pin it if this
@@ -80,5 +90,5 @@ dev_user_brewfile: true
 # apt is the alternative: Anthropic publish a signed repository, which trades the self-update for a
 # GPG-verified package and a system-wide install. The native installer is what this uses because it
 # keeps the tool inside the home, like everything else this role puts there.
-dev_user_claude_code: true
+dev_user_claude_code: false
 dev_user_claude_code_channel: ""

@@ -129,6 +129,15 @@ jobs:
           chmod -R a+rX /tmp/dotfiles-src
           # The staged copy is at whatever ref this run checked out, which on a pull request is
           # not main -- so name the commit rather than a branch that may not exist locally.
+          # Its own inventory: the checked-in one is empty so that a run given no host provisions
+          # none, and a job that provisions has to name the host it means.
+          cat > /tmp/ci-inventory.ini <<INV
+          [dev]
+          localhost ansible_connection=local
+
+          [dev:vars]
+          ansible_python_interpreter=/usr/bin/python3
+          INV
           cat > /tmp/ci-vars.yml <<YML
           dev_user_name: citest
           dev_user_comment: "CI test account"
@@ -139,9 +148,12 @@ jobs:
           # Brewfile -- forty-odd formulae, minutes per run, and not what this job is checking. The
           # shell job already parses the Brewfile; nothing here exercises installing it.
           dev_user_brewfile: false
+          # The home is the runner's root volume, which is the only one it has.
+          dev_user_home_require_separate_fs: false
+          dev_user_claude_code: true
           YML
-          ansible-playbook -i ansible/inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml
-          ansible-playbook -i ansible/inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml | tee second.log
+          ansible-playbook -i /tmp/ci-inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml
+          ansible-playbook -i /tmp/ci-inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml | tee second.log
           grep -qE "changed=0 .*failed=0" second.log || { echo "second run was not a no-op"; exit 1; }
 
       - name: The account it produced

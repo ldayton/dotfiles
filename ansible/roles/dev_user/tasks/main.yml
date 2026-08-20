@@ -161,6 +161,24 @@
   become: true
   loop: "{{ dev_user_authorized_keys }}"
 
+- name: Grant passwordless sudo
+  ansible.builtin.copy:
+    content: "{{ dev_user_name }} ALL=(ALL) NOPASSWD:ALL\n"
+    dest: "/etc/sudoers.d/60-{{ dev_user_name }}"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: visudo -cf %s
+  become: true
+  when: dev_user_sudo_nopasswd | bool
+
+- name: Withdraw a sudo grant that is no longer asked for
+  ansible.builtin.file:
+    path: "/etc/sudoers.d/60-{{ dev_user_name }}"
+    state: absent
+  become: true
+  when: not (dev_user_sudo_nopasswd | bool)
+
 # The account's own key, which is what the dotfiles clone below authenticates with. It has
 # to be registered on the git host by hand -- that step is a human's, so surface it rather
 # than failing four tasks later with a bare Permission denied.
@@ -189,13 +207,23 @@
   ansible.builtin.set_fact:
     dev_user_git_host_keys: "{{ dev_user_git_host_keys or (dev_user_git_host_meta.json.ssh_keys | default([])) }}"
 
+# Only when something here actually speaks SSH: the dotfiles clone is HTTPS by default, while an
+# overlay is private by nature and an SSH dotfiles URL is a supported override.
+- name: Does anything here clone over SSH?
+  ansible.builtin.set_fact:
+    dev_user_wants_ssh: "{{ (dev_user_dotfiles_repo is search('^(ssh://|[^/]+@)'))
+                            or (dev_user_overlay_repo | length > 0
+                                and dev_user_overlay_repo is search('^(ssh://|[^/]+@)')) }}"
+
 - name: Refuse to clone with no host key to verify against
   ansible.builtin.fail:
     msg: >-
       No SSH host keys resolved for {{ dev_user_git_host }}. Set dev_user_git_host_keys, or
       point dev_user_git_host_keys_url at an endpoint publishing them over TLS. Cloning
       without a pinned key would trust whatever answers on the network.
-  when: dev_user_git_host_keys | length == 0
+  when:
+    - dev_user_wants_ssh
+    - dev_user_git_host_keys | length == 0
 
 - name: Pin the git host keys
   ansible.builtin.known_hosts:
@@ -224,9 +252,10 @@
 - name: Explain a clone that failed on authentication
   ansible.builtin.fail:
     msg: >-
-      Could not clone {{ dev_user_dotfiles_repo }} as {{ dev_user_name }}. Register the
-      public key printed above with the git host, then re-run. To use a different account
-      or a read-only URL, override dev_user_dotfiles_repo.
+      Could not clone {{ dev_user_dotfiles_repo }} as {{ dev_user_name }}. That URL speaks SSH,
+      which authenticates whether or not the repository is public — register the public key
+      printed above with the git host and re-run, or point dev_user_dotfiles_repo at an HTTPS
+      URL, which needs no credential for a public repository.
   when: "'Permission denied (publickey)' in (dev_user_dotfiles_clone.msg | default(''))"
 
 # The repo's own installer, run as the account it is configuring, rather than a second
