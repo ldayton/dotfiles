@@ -88,3 +88,53 @@ jobs:
 
       - name: The playbook lints
         run: ansible-lint ansible/site.yml
+
+  role:
+    name: ansible role (executed)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ansible
+        run: pip install --quiet ansible-core
+
+      - name: The collections the role declares
+        run: ansible-galaxy collection install -r ansible/requirements.yml
+
+      # The job the other two cannot do. Parsing found none of the defects a real run has: a link
+      # list naming a renamed file, tasks configuring a filter for a path that no longer exists, a
+      # login shell that does not exist, brew tasks ungated on a prefix that is absent, a variable
+      # referenced three times and defined none. Every one of those passed --syntax-check and
+      # ansible-lint. A runner is a disposable machine with sudo, which is what this role wants.
+      #
+      # The clone is the checkout itself, not the published repo -- otherwise CI would provision
+      # from main and pass on a pull request whose own install.sh is broken.
+      #
+      # Staged under /tmp rather than cloned from the workspace in place: the account this role
+      # creates has to read the source, and the runner's home is not somewhere to assume a
+      # traversable mode. A cross-ownership file:// clone itself is fine -- checked -- so the copy
+      # is only about reachability.
+      - name: Provision a test account, then prove the second run is a no-op
+        run: |
+          cp -r "$GITHUB_WORKSPACE" /tmp/dotfiles-src
+          chmod -R a+rX /tmp/dotfiles-src
+          cat > /tmp/ci-vars.yml <<'YML'
+          dev_user_name: citest
+          dev_user_comment: "CI test account"
+          dev_user_shell: /bin/bash
+          dev_user_dotfiles_repo: file:///tmp/dotfiles-src
+          YML
+          ansible-playbook -i ansible/inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml
+          ansible-playbook -i ansible/inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml | tee second.log
+          grep -qE "changed=0 .*failed=0" second.log || { echo "second run was not a no-op"; exit 1; }
+
+      - name: The account it produced
+        run: |
+          sudo test -L /home/citest/.zshrc || { echo ".zshrc is not a link"; exit 1; }
+          sudo test -f /home/citest/.claude/settings.json || { echo "settings.json missing"; exit 1; }
+          sudo test ! -L /home/citest/.claude/settings.json || { echo "settings.json should be generated, not linked"; exit 1; }
+          [ "$(stat -c %a /home/citest)" = "750" ] || { echo "home is $(stat -c %a /home/citest), not 750"; exit 1; }
+          sudo -u citest -H /home/citest/.local/bin/claude --version
