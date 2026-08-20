@@ -243,6 +243,31 @@
   # and the already-linked check were worth porting.
   changed_when: "'✓' in dev_user_dotfiles_install.stdout"
 
+# The installer puts everything under $HOME and refuses to run as root with SUDO_USER set, because
+# that would land the binary in root's home and leave `claude` not found in the account's own shell.
+# become_user runs this as the account itself, so the uid is not 0 and the check does not apply.
+- name: Claude Code, in the account's own home
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://claude.ai/install.sh | bash -s {{ dev_user_claude_code_channel }}
+  args:
+    executable: /bin/bash
+    creates: "{{ dev_user_home }}/.local/bin/claude"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  when: dev_user_claude_code | bool
+
+# Stated rather than assumed, like the mount and the runner service elsewhere: the installer
+# exiting 0 is not the same as a binary that runs, and the launcher is a symlink into a versions
+# directory that a background update rewrites.
+- name: Claude Code answers
+  ansible.builtin.command: "{{ dev_user_home }}/.local/bin/claude --version"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  register: dev_user_claude_version
+  changed_when: false
+  when: dev_user_claude_code | bool
+
 # Packages live in the shared prefix, so they are installed once by whoever owns it rather
 # than per account. `bundle check` is what makes this idempotent -- `brew bundle` alone
 # always reports work done, and would mark the play changed on every run.
