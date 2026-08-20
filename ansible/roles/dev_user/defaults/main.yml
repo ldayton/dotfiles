@@ -23,7 +23,12 @@ dev_user_shell: "{{ dev_user_brew_prefix }}/bin/zsh"
 # Set it false for a machine where the root volume is genuinely the intended home.
 dev_user_home: "/home/{{ dev_user_name }}"
 dev_user_home_require_separate_fs: true
-dev_user_dotfiles_repo: git@github.com:ldayton/dotfiles.git
+# HTTPS, not SSH. This repository is public, so a read-only clone needs no credential at all —
+# whereas SSH authenticates whether or not the other end is public, which made provisioning any new
+# box wait on somebody registering a freshly generated key before setup could finish. Push access is
+# a separate errand the account can gain later; it is not a prerequisite for being configured.
+# Override with an SSH URL for a private fork, and the host-key pinning below covers it.
+dev_user_dotfiles_repo: https://github.com/ldayton/dotfiles.git
 # A variable for the same reason the overlay's is: pinning the branch, or provisioning from a
 # commit that is not on main, should not require editing the task. Hardcoding it meant the role
 # could only ever clone main, which CI found the moment it provisioned from a pull request.
