@@ -1,62 +1,163 @@
 #!/usr/bin/env bash
 # gh wrapper that switches GitHub accounts based on repo's gh.account config
 # Usage: Set `git config gh.account ldayton` in a repo to use that account's token
+#
+# Contract, because the caller is usually an assistant that believes this is plain gh: every
+# real gh flag and subcommand reaches gh untouched and the exit status is gh's. The wrapper
+# adds exactly three things -- `-C <path>`, `--which`, and GH_WRAPPER_DISABLE.
+#
+# When the wrapper itself refuses, it follows gh's own exit conventions (`gh help exit-codes`)
+# rather than inventing a code: 4 when the problem is authentication, 1 otherwise. gh declines
+# to guarantee its full exit-code space, so a private code would not have been reliably
+# distinguishable anyway. The `gh-wrapper:` stderr prefix is what separates our failures from
+# gh's, and that is exactly where a caller reads the reason.
 
-set -euo pipefail
+set -uo pipefail
 
-if [[ -x "/opt/homebrew/bin/gh" ]]; then
-    GH_BINARY="/opt/homebrew/bin/gh"
-elif [[ -x "/usr/local/bin/gh" ]]; then
-    GH_BINARY="/usr/local/bin/gh"
-elif [[ -x "/home/linuxbrew/.linuxbrew/bin/gh" ]]; then
-    GH_BINARY="/home/linuxbrew/.linuxbrew/bin/gh"
-else
-    echo "gh not found" >&2
+die() {
+    printf 'gh-wrapper: %s\n' "$@" >&2
     exit 1
+}
+
+# Exit 4 is gh's documented "command requires authentication", which is precisely what a
+# missing account token is. Reusing it means a caller's existing handling for gh auth
+# failures already covers this one.
+die_auth() {
+    printf 'gh-wrapper: %s\n' "$@" >&2
+    exit 4
+}
+
+# Homebrew locations first, then $PATH minus this script. Reporting "gh not found" on a box
+# where apt or dnf put it in /usr/bin sends the caller off installing what it already has.
+self="$(realpath -- "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")"
+GH_BINARY=""
+for candidate in /opt/homebrew/bin/gh /usr/local/bin/gh /home/linuxbrew/.linuxbrew/bin/gh; do
+    [[ -x "$candidate" ]] && { GH_BINARY="$candidate"; break; }
+done
+if [[ -z "$GH_BINARY" ]]; then
+    while IFS= read -r candidate; do
+        [[ -x "$candidate" ]] || continue
+        # -ef compares device and inode, so this holds even where realpath is unavailable and
+        # the two paths are spelled differently. Getting it wrong means exec'ing ourselves.
+        [[ "$candidate" -ef "$self" ]] && continue
+        GH_BINARY="$candidate"
+        break
+    done < <(type -aP gh 2>/dev/null)
+fi
+[[ -n "$GH_BINARY" ]] || die "the real gh binary was not found (checked the Homebrew paths and \$PATH)." \
+    "  Install it: brew install gh"
+
+# Documented bypass, so a caller that hits wrapper trouble has somewhere to go other than
+# guessing at absolute paths: no account resolution, no policy hook, just gh.
+if [[ -n "${GH_WRAPPER_DISABLE:-}" ]]; then
+    exec "$GH_BINARY" "$@"
 fi
 
-# Parse -C flag to find repo path
+# `-C <path>` mirrors git's, since that is the habit anyone arrives with and gh has no -C of
+# its own: resolve the account from that repo AND run gh there, so the token and the repo gh
+# detects cannot disagree. It has to be consumed rather than forwarded -- gh answers a
+# forwarded -C with `unknown shorthand flag: 'C'`. Only recognized ahead of the subcommand,
+# again like git, so a subcommand's own -C (or a value that looks like one) is left alone.
+# It inherits git's footgun too: later relative paths, `--body-file notes.md` among them,
+# resolve from <path> and not from where you typed the command.
+#
+# Values of value-taking global flags have to be skipped while looking for the subcommand, or
+# `gh -R owner/repo pr view` reads its subcommand as "owner/repo" -- the same trap policy.sh
+# documents for its own parser. Here it was worse than a miss: it put `gh --hostname X auth
+# status` behind the token check that `gh auth` exists to repair.
 repo_path="."
-args=("$@")
-for ((i=0; i<${#args[@]}; i++)); do
-    if [[ "${args[i]}" == "-C" && $((i+1)) -lt ${#args[@]} ]]; then
-        repo_path="${args[i+1]}"
-        break
+want_which=false
+subcommand=""
+skip_next=false
+gh_args=()
+while (( $# )); do
+    if [[ "$skip_next" == true ]]; then
+        skip_next=false
+        gh_args+=("$1")
+        shift
+        continue
     fi
+    if [[ -z "$subcommand" ]]; then
+        case "$1" in
+            -C)
+                [[ $# -ge 2 ]] || die "-C requires a path"
+                repo_path="$2"
+                shift 2
+                continue ;;
+            -C?*)
+                repo_path="${1#-C}"
+                shift
+                continue ;;
+            --which)
+                want_which=true
+                shift
+                continue ;;
+            -R|--repo|--hostname) skip_next=true ;;
+            -*) ;;
+            *) subcommand="$1" ;;
+        esac
+    fi
+    gh_args+=("$1")
+    shift
 done
+[[ -d "$repo_path" ]] || die "-C: no such directory: $repo_path"
 
-# Check for --which flag (diagnostic)
-for arg in "$@"; do
-    if [[ "$arg" == "--which" ]]; then
-        account=$(git -C "$repo_path" config gh.account 2>/dev/null || true)
-        echo "${account:-default}"
-        exit 0
-    fi
-done
+account="$(git -C "$repo_path" config gh.account 2>/dev/null)"
+
+if [[ "$want_which" == true ]]; then
+    printf '%s\n' "${account:-default}"
+    exit 0
+fi
+
+# `gh auth ...` is how a missing token gets fixed, and --version/--help touch no API, so none
+# of them may be gated on resolving one -- gating auth would make the failure unrecoverable
+# through this wrapper.
+needs_token=true
+case "$subcommand" in
+    ""|auth|version|help|completion) needs_token=false ;;
+esac
 
 # Resolve the account's token per-process via GH_TOKEN instead of `gh auth switch`: switching
-# mutates the shared hosts.yml active account, so concurrent sessions on different repos flip it
-# under each other mid-request (intermittent 401s). `gh auth token --user` is read-only.
-account=$(git -C "$repo_path" config gh.account 2>/dev/null || true)
-if [[ -n "$account" ]]; then
-    token=$("$GH_BINARY" auth token --user "$account" 2>/dev/null || true)
-    if [[ -n "$token" ]]; then
-        export GH_TOKEN="$token"
-    fi
+# mutates the shared hosts.yml active account, so concurrent sessions on different repos flip
+# it under each other mid-request (intermittent 401s). `gh auth token --user` is read-only.
+if [[ -n "${GH_TOKEN:-}" ]]; then
+    # A token already in the environment wins. It is the more deliberate and more local
+    # signal -- a direnv .envrc, a CI secret -- and overwriting it from git config surfaced
+    # only as "Bad credentials", with nothing naming this wrapper as the cause.
+    [[ -n "$account" ]] && echo "gh-wrapper: GH_TOKEN is set in the environment; ignoring gh.account=$account." >&2
+elif [[ -n "$account" && "$needs_token" == true ]]; then
+    token="$("$GH_BINARY" auth token --user "$account" 2>/dev/null)"
+    # Stop instead of falling through to whichever account happens to be active. That
+    # fallback ran personal-repo commands as the work account and reported success either
+    # way; if the repo says ldayton and ldayton has no token, there is no safe guess.
+    [[ -n "$token" ]] || die_auth \
+        "gh.account=$account is configured for $repo_path, but no token is stored for that account." \
+        "gh would otherwise have run as a different account than the repo asks for, so this is a refusal, not a warning." \
+        "  Log in:  gh auth login   (choose $account)" \
+        "  Check:   gh auth status" \
+        "  Bypass:  GH_WRAPPER_DISABLE=1 gh ${gh_args[*]:-...}"
+    export GH_TOKEN="$token"
 fi
 
 # Optional local policy hook. Same base+local split as CLAUDE.md, zshrc and the dippy
 # config: this repo stays portable, and anything employer-specific lives outside it in a
 # private overlay. The hook defines gh_policy_check and returns non-zero to refuse the
 # command, having printed its own explanation; sourcing it here means it can see $account
-# and $GH_BINARY without them being passed around.
+# and $GH_BINARY without them being passed around. It is handed the post-`-C` arguments,
+# which are the ones gh will actually see.
 GH_POLICY="${GH_POLICY:-$HOME/.config/gh-wrapper/policy.sh}"
 if [[ -f "$GH_POLICY" ]]; then
     # shellcheck source=/dev/null
-    source "$GH_POLICY"
+    source "$GH_POLICY" || die "policy hook failed to load: $GH_POLICY" \
+        "  Bypass: GH_WRAPPER_DISABLE=1 gh ${gh_args[*]:-...}"
     if declare -F gh_policy_check >/dev/null; then
-        gh_policy_check "$@" || exit $?
+        gh_policy_check ${gh_args[@]+"${gh_args[@]}"}
+        policy_status=$?
+        (( policy_status == 0 )) || exit "$policy_status"
     fi
 fi
 
-exec "$GH_BINARY" "$@"
+if [[ "$repo_path" != "." ]]; then
+    cd "$repo_path" || die "-C: cannot enter $repo_path"
+fi
+exec "$GH_BINARY" ${gh_args[@]+"${gh_args[@]}"}
