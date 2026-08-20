@@ -1,7 +1,7 @@
 ---
 # Provisions a namespaced dev account on a box that belongs to other things too. Run it
 # from an account with sudo; it touches nothing outside the new home except the Homebrew
-# group, and only then when brew_share_mode is 'group'.
+# group, and only then when dev_user_brew_share_mode is 'group'.
 #
 #   ansible-playbook -i inventory.ini site.yml --check     # dry run first
 #   ansible-playbook -i inventory.ini site.yml
