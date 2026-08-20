@@ -38,9 +38,12 @@ dev_user_brew_group: brew
 #               as whoever owns it (`sudo -u ubuntu brew install ...`). Nothing to break.
 dev_user_brew_share_mode: readonly
 
-# Whoever owns the prefix runs brew. Correct in both share modes, and it keeps a readonly
-# setup from needing write access it does not have.
-dev_user_brew_owner: ubuntu
+# Whoever owns the prefix runs brew. Empty means ask the filesystem, which is the only answer
+# that is true everywhere: the prefix's owner IS the account that installed it. A literal here was
+# the cloud image's account name, and it was wrong on the first machine that was not that image --
+# the run then tried to become a user who did not exist and failed on a temp-file permission it
+# could not set.
+dev_user_brew_owner: ""
 
 # Private overlay, off by default -- this repo stays portable and employer-agnostic. Set
 # dev_user_overlay_repo in an untracked vars file (see private.yml.example) to enable.
