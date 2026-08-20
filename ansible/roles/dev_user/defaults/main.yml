@@ -9,7 +9,14 @@ dev_user_groups: [sudo]
 # two accounts on one shell. It does mean login depends on brew_prefix being readable.
 dev_user_shell: "{{ brew_prefix }}/bin/zsh"
 
+# Point this at a larger or faster volume when the root one is small: useradd creates missing
+# parents, so any path works. Two things to know before doing that. Instance-store volumes are
+# wiped on stop/start and on any instance replacement, so a home on one is disposable by
+# construction. And a volume mounted `nofail` that does not come up leaves its mountpoint as an
+# ordinary directory on the root filesystem, so the home is created there instead, silently --
+# set dev_user_home_require_separate_fs when the whole point was to be off the root volume.
 dev_user_home: "/home/{{ dev_user_name }}"
+dev_user_home_require_separate_fs: false
 dev_user_dotfiles_repo: git@github.com:ldayton/dotfiles.git
 dev_user_dotfiles_dest: "{{ dev_user_home }}/source/dotfiles"
 
@@ -33,7 +40,6 @@ dev_user_links:
   - {src: ripgrep/ripgreprc, dest: .ripgreprc}
   - {src: atuin/config.toml, dest: .config/atuin/config.toml}
   - {src: starship/starship.toml, dest: .config/starship.toml}
-  - {src: claude/settings.json, dest: .claude/settings.json}
   - {src: vscode/settings.json, dest: .config/Code/User/settings.json}
   - {src: zed/settings.json, dest: .config/zed/settings.json}
   - {src: zed/keymap.json, dest: .config/zed/keymap.json}

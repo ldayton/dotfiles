@@ -85,6 +85,52 @@
   changed_when: brew_setgid.stdout | length > 0
   when: brew_prefix_stat.stat.isdir | default(false)
 
+# A home meant to live on another volume, on a filesystem that turns out to be the root one,
+# means the volume did not mount -- `nofail` lets that happen quietly at boot. Checked before
+# the account exists, because afterwards the only symptom is the root volume filling up.
+- name: Which filesystem would the home be created on?
+  ansible.builtin.shell: |
+    set -o pipefail
+    # Walk up to the nearest ancestor that exists: the home and its parents are usually both
+    # absent on a first run, and df on a path that is not there exits 1.
+    probe={{ dev_user_home | quote }}
+    while [ ! -e "$probe" ]; do probe=$(dirname "$probe"); done
+    df --output=source -- "$probe" | tail -1
+    df --output=source -- / | tail -1
+  args:
+    executable: /bin/bash
+  become: true
+  register: dev_user_home_fs
+  changed_when: false
+  when: dev_user_home_require_separate_fs | bool
+
+- name: Refuse a home that would land on the root volume
+  ansible.builtin.fail:
+    msg: >-
+      dev_user_home is {{ dev_user_home }} and dev_user_home_require_separate_fs is set, but the
+      nearest existing ancestor of that path is on the same filesystem as / -- both are
+      {{ dev_user_home_fs.stdout_lines[1] | trim }}. The volume it was meant to live on is most
+      likely not mounted: an fstab entry marked nofail leaves its mountpoint behind as an ordinary
+      directory on the root volume, and the home would be created there without anything saying so.
+  when:
+    - dev_user_home_require_separate_fs | bool
+    - (dev_user_home_fs.stdout_lines[0] | trim) == (dev_user_home_fs.stdout_lines[1] | trim)
+
+# useradd does not check that the shell exists, so a missing one produces an account nobody
+# can log into while every task still reports ok. The default shell lives inside the Homebrew
+# prefix, which this role does not install.
+- name: Check that the login shell exists on the target
+  ansible.builtin.stat:
+    path: "{{ dev_user_shell }}"
+  register: dev_user_shell_stat
+
+- name: Refuse to create an account with a shell that is not there
+  ansible.builtin.fail:
+    msg: >-
+      dev_user_shell is {{ dev_user_shell }}, which does not exist on this host. Install it
+      first, or set dev_user_shell to a shell that is present (/bin/bash on a stock Ubuntu).
+  when: not (dev_user_shell_stat.stat.exists | default(false))
+
 - name: Create the account
   ansible.builtin.user:
     name: "{{ dev_user_name }}"
@@ -183,6 +229,20 @@
     link_root: "{{ dev_user_dotfiles_dest }}"
     link_list: "{{ dev_user_links }}"
 
+# settings.json is generated rather than linked, because Claude Code writes into it. Linking
+# the tracked file is what the base repo stopped doing; the link list here named the old path
+# and the role failed on a source that no longer exists.
+- name: Generate settings.json for the account
+  ansible.builtin.command:
+    cmd: "{{ dev_user_dotfiles_dest }}/claude/build-settings"
+  environment:
+    CLAUDE_SETTINGS_BASE: "{{ dev_user_dotfiles_dest }}/claude/settings.base.json"
+    HOME: "{{ dev_user_home }}"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  register: settings_built
+  changed_when: settings_built.stdout == "updated"
+
 # gitconfig is copied rather than linked, and never overwritten: user.email is per-account,
 # and the tracked copy deliberately carries no email at all. force: false is what makes this
 # a seed rather than a config that gets reset on every run.
@@ -195,42 +255,6 @@
     mode: "0644"
   become: true
   become_user: "{{ dev_user_name }}"
-
-# Claude Code rewrites the current model into settings.json on every switch, which would
-# leave the clone permanently dirty with a per-machine value. The clean filter strips the
-# key at stage time; skip-worktree silences the status noise the filter cannot.
-- name: Configure the claude-settings clean filter
-  community.general.git_config:
-    name: "filter.claude-settings.{{ item.key }}"
-    value: "{{ item.value }}"
-    scope: local
-    repo: "{{ dev_user_dotfiles_dest }}"
-  become: true
-  become_user: "{{ dev_user_name }}"
-  loop:
-    - {key: clean, value: "jq --indent 2 'del(.model)'"}
-    - {key: smudge, value: cat}
-  loop_control:
-    label: "filter.claude-settings.{{ item.key }}"
-
-- name: Check whether settings.json is already skip-worktree
-  ansible.builtin.command:
-    cmd: git ls-files -v claude/settings.json
-    chdir: "{{ dev_user_dotfiles_dest }}"
-  become: true
-  become_user: "{{ dev_user_name }}"
-  register: skip_worktree_state
-  changed_when: false
-
-# `git ls-files -v` prefixes a skip-worktree entry with S. Checking first is what keeps a
-# re-run from reporting changed forever over a flag that was already set.
-- name: Mark settings.json skip-worktree
-  ansible.builtin.command:
-    cmd: git update-index --skip-worktree claude/settings.json
-    chdir: "{{ dev_user_dotfiles_dest }}"
-  become: true
-  become_user: "{{ dev_user_name }}"
-  when: skip_worktree_state.stdout[:1] != 'S'
 
 # Packages live in the shared prefix, so they are installed once by whoever owns it rather
 # than per account. `bundle check` is what makes this idempotent -- `brew bundle` alone
@@ -248,6 +272,7 @@
     group: root
     mode: "0755"
   become: true
+  when: brew_prefix_stat.stat.isdir | default(false)
 
 - name: Stage the Brewfile where the prefix owner can read it
   ansible.builtin.copy:
@@ -258,6 +283,7 @@
     group: root
     mode: "0644"
   become: true
+  when: brew_prefix_stat.stat.isdir | default(false)
 
 - name: Check whether the Brewfile is already satisfied
   ansible.builtin.command:
@@ -267,13 +293,16 @@
   register: brew_check
   changed_when: false
   failed_when: false
+  when: brew_prefix_stat.stat.isdir | default(false)
 
 - name: Install the Brewfile
   ansible.builtin.command:
     cmd: "{{ brew_prefix }}/bin/brew bundle --file={{ brew_stage_dir }}/Brewfile"
   become: true
   become_user: "{{ brew_owner }}"
-  when: brew_check.rc != 0
+  when:
+    - brew_prefix_stat.stat.isdir | default(false)
+    - brew_check.rc | default(0) != 0
   register: brew_bundle
   changed_when: brew_bundle.rc == 0
 
