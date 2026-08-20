@@ -5,6 +5,7 @@ brew "python"      # latest Python for general development
 brew "typescript"  # typed superset of JavaScript that compiles to plain JS
 
 # Development Tools
+brew "bazelisk"    # Bazel launcher (auto-switches per .bazelversion)
 brew "direnv"      # load/unload environment variables per directory
 brew "fnm"         # fast Node.js version manager (auto-switches per .nvmrc)
 brew "cloc"        # code statistics
