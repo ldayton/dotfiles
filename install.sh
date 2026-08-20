@@ -13,7 +13,7 @@ link() {
 
     # `ln -s` succeeds on a target that does not exist, so a source removed from the repo
     # installs as a dangling symlink that nothing reports until something reads through it.
-    # That is how ~/.claude/statusline.py survived the statusline moving into dippy.
+    # That is how ~/.claude/statusline.py outlived the statusline it was pointing at.
     if [ ! -e "$src" ]; then
         echo "  ✗ MISSING SOURCE: $src (not linking)"
         return 1

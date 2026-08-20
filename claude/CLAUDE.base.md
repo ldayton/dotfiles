@@ -43,7 +43,6 @@
 - Don't do Python syntax checks (uv run python3 -m py_compile). They're pointless.
 - Use -sS with curl
 - Use `pypi <package>` to look up latest PyPI versions
-- Dippy audit log: ~/.claude/dippy-audit.log
 - After editing markdown, run `prettier --prose-wrap never --write` on touched files
 
 # WSL
