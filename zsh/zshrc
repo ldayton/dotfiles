@@ -116,6 +116,9 @@ mcp-cli() { command mcp-cli "$@" 2>/dev/null; }
 # - Builds ~/.claude/CLAUDE.md from ~/source/dotfiles/claude/CLAUDE.base.md + ~/.claude/CLAUDE.local.md
 claude() {
     mkdir -p ~/.claude
+    # settings.json is generated rather than linked, so the file Claude Code writes into is
+    # not one git tracks. build-settings carries `model` across the rebuild.
+    build-settings || return 1
     # Build to a temp file and move it into place: `>` truncates before cat runs, so a
     # missing or renamed base file used to leave a zero-byte CLAUDE.md. The mv also makes
     # this safe when two shells start at once.
