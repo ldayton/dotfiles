@@ -85,6 +85,37 @@
   changed_when: brew_setgid.stdout | length > 0
   when: brew_prefix_stat.stat.isdir | default(false)
 
+# A home meant to live on another volume, on a filesystem that turns out to be the root one,
+# means the volume did not mount -- `nofail` lets that happen quietly at boot. Checked before
+# the account exists, because afterwards the only symptom is the root volume filling up.
+- name: Which filesystem would the home be created on?
+  ansible.builtin.shell: |
+    set -o pipefail
+    # Walk up to the nearest ancestor that exists: the home and its parents are usually both
+    # absent on a first run, and df on a path that is not there exits 1.
+    probe={{ dev_user_home | quote }}
+    while [ ! -e "$probe" ]; do probe=$(dirname "$probe"); done
+    df --output=source -- "$probe" | tail -1
+    df --output=source -- / | tail -1
+  args:
+    executable: /bin/bash
+  become: true
+  register: dev_user_home_fs
+  changed_when: false
+  when: dev_user_home_require_separate_fs | bool
+
+- name: Refuse a home that would land on the root volume
+  ansible.builtin.fail:
+    msg: >-
+      dev_user_home is {{ dev_user_home }} and dev_user_home_require_separate_fs is set, but the
+      nearest existing ancestor of that path is on the same filesystem as / -- both are
+      {{ dev_user_home_fs.stdout_lines[1] | trim }}. The volume it was meant to live on is most
+      likely not mounted: an fstab entry marked nofail leaves its mountpoint behind as an ordinary
+      directory on the root volume, and the home would be created there without anything saying so.
+  when:
+    - dev_user_home_require_separate_fs | bool
+    - (dev_user_home_fs.stdout_lines[0] | trim) == (dev_user_home_fs.stdout_lines[1] | trim)
+
 # useradd does not check that the shell exists, so a missing one produces an account nobody
 # can log into while every task still reports ok. The default shell lives inside the Homebrew
 # prefix, which this role does not install.
