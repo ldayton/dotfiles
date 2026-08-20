@@ -290,7 +290,9 @@
     group: root
     mode: "0755"
   become: true
-  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
+  when:
+    - dev_user_brewfile | bool
+    - dev_user_brew_prefix_stat.stat.isdir | default(false)
 
 - name: Stage the Brewfile where the prefix owner can read it
   ansible.builtin.copy:
@@ -301,7 +303,9 @@
     group: root
     mode: "0644"
   become: true
-  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
+  when:
+    - dev_user_brewfile | bool
+    - dev_user_brew_prefix_stat.stat.isdir | default(false)
 
 - name: Check whether the Brewfile is already satisfied
   ansible.builtin.command:
@@ -312,6 +316,7 @@
   changed_when: false
   failed_when: false
   when: dev_user_brew_prefix_stat.stat.isdir | default(false)
+  when: dev_user_brewfile | bool
 
 - name: Install the Brewfile
   ansible.builtin.command:
@@ -319,6 +324,7 @@
   become: true
   become_user: "{{ dev_user_brew_runner }}"
   when:
+    - dev_user_brewfile | bool
     - dev_user_brew_prefix_stat.stat.isdir | default(false)
     - dev_user_brew_check.rc | default(0) != 0
   register: dev_user_brew_bundle

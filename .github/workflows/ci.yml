@@ -22,15 +22,21 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
+      # Install only what is missing. Both runner images already carry most of this, and touching
+      # brew at all pulls in a tap-trust warning about taps the macOS image happens to have tapped.
       - name: Tools the checks need
         run: |
+          missing=""
+          for t in shellcheck jq zsh; do command -v "$t" >/dev/null || missing="$missing $t"; done
+          [ -z "$missing" ] && { echo "all present"; exit 0; }
+          echo "installing:$missing"
           if [ "$RUNNER_OS" = "macOS" ]; then
-            brew install -q shellcheck jq
+            brew install -q $missing
           else
             sudo apt-get update -qq
-            sudo apt-get install -y -qq shellcheck jq zsh
+            sudo apt-get install -y -qq $missing
           fi
 
       - name: shellcheck
@@ -70,8 +76,8 @@ jobs:
     name: ansible
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -93,8 +99,8 @@ jobs:
     name: ansible role (executed)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -129,6 +135,10 @@ jobs:
           dev_user_shell: /bin/bash
           dev_user_dotfiles_repo: file:///tmp/dotfiles-src
           dev_user_dotfiles_version: $(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)
+          # The runner ships Homebrew, so the brew gate passes and the role would install the whole
+          # Brewfile -- forty-odd formulae, minutes per run, and not what this job is checking. The
+          # shell job already parses the Brewfile; nothing here exercises installing it.
+          dev_user_brewfile: false
           YML
           ansible-playbook -i ansible/inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml
           ansible-playbook -i ansible/inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml | tee second.log

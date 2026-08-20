@@ -66,6 +66,11 @@ dev_user_git_host_keys: []
 # made traversable, and so no other local account can pre-place the path.
 dev_user_brew_stage_dir: /var/lib/dev-user-role
 
+# Whether to install the Brewfile at all. On by default, because a dev account without its tools
+# is half an account -- but installing forty-odd formulae is minutes, and provisioning an account
+# is not always the same errand as populating a machine.
+dev_user_brewfile: true
+
 # Claude Code, installed into the account's own home by Anthropic's native installer. Set the
 # channel to "stable" for the roughly week-old release, or to an exact version to pin one; empty
 # means the default channel. A native install updates itself in the background, which is right for
