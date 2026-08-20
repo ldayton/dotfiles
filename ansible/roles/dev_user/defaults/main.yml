@@ -18,6 +18,10 @@ dev_user_shell: "{{ dev_user_brew_prefix }}/bin/zsh"
 dev_user_home: "/home/{{ dev_user_name }}"
 dev_user_home_require_separate_fs: false
 dev_user_dotfiles_repo: git@github.com:ldayton/dotfiles.git
+# A variable for the same reason the overlay's is: pinning the branch, or provisioning from a
+# commit that is not on main, should not require editing the task. Hardcoding it meant the role
+# could only ever clone main, which CI found the moment it provisioned from a pull request.
+dev_user_dotfiles_version: main
 dev_user_dotfiles_dest: "{{ dev_user_home }}/source/dotfiles"
 
 # Public keys authorized to log in as this user. Empty means no direct ssh -- reach the

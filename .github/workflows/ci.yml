@@ -121,11 +121,14 @@ jobs:
         run: |
           cp -r "$GITHUB_WORKSPACE" /tmp/dotfiles-src
           chmod -R a+rX /tmp/dotfiles-src
-          cat > /tmp/ci-vars.yml <<'YML'
+          # The staged copy is at whatever ref this run checked out, which on a pull request is
+          # not main -- so name the commit rather than a branch that may not exist locally.
+          cat > /tmp/ci-vars.yml <<YML
           dev_user_name: citest
           dev_user_comment: "CI test account"
           dev_user_shell: /bin/bash
           dev_user_dotfiles_repo: file:///tmp/dotfiles-src
+          dev_user_dotfiles_version: $(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)
           YML
           ansible-playbook -i ansible/inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml
           ansible-playbook -i ansible/inventory.ini ansible/site.yml -e @/tmp/ci-vars.yml | tee second.log

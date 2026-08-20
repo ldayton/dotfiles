@@ -206,7 +206,7 @@
   ansible.builtin.git:
     repo: "{{ dev_user_dotfiles_repo }}"
     dest: "{{ dev_user_dotfiles_dest }}"
-    version: main
+    version: "{{ dev_user_dotfiles_version }}"
     update: false
   become: true
   become_user: "{{ dev_user_name }}"
