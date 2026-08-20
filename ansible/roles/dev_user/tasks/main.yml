@@ -56,6 +56,11 @@
     - brew_share_mode == 'group'
     - brew_prefix_stat.stat.isdir | default(false)
 
+# Group-write reaches every binary in the prefix, the login shell among them, and this role
+# puts the account it provisions in sudo. Any other member of the brew group therefore gets a
+# path to root by rewriting a binary a sudoer runs. Setgid is not needed for that -- membership
+# is enough -- so treat the group as equivalent to sudo on this host, and keep it to accounts
+# that already have it. That is why readonly is the default.
 - name: Group-write on files, without setgid
   ansible.builtin.command:
     cmd: find {{ brew_prefix }} -type f ! -perm -g+w -printf . -exec chmod g+w {} +
@@ -170,7 +175,7 @@
       Could not clone {{ dev_user_dotfiles_repo }} as {{ dev_user_name }}. Register the
       public key printed above with the git host, then re-run. To use a different account
       or a read-only URL, override dev_user_dotfiles_repo.
-  when: "'Permission denied' in (dotfiles_clone.msg | default(''))"
+  when: "'Permission denied (publickey)' in (dotfiles_clone.msg | default(''))"
 
 - name: Link the base dotfiles
   ansible.builtin.include_tasks: links.yml

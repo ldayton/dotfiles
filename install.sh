@@ -7,6 +7,16 @@ DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 
 echo "Installing dotfiles from $DOTFILES"
 
+# Refuse to install out of a linked worktree. $DOTFILES would be the worktree path, so every
+# link in $HOME would point into it and dangle as soon as it is removed -- and the
+# skip-worktree flag below is per-worktree, so it would not carry to the main checkout either.
+if git_dir="$(git -C "$DOTFILES" rev-parse --git-dir 2>/dev/null)" \
+   && common_dir="$(git -C "$DOTFILES" rev-parse --git-common-dir 2>/dev/null)" \
+   && [ "$(cd "$DOTFILES" && cd "$git_dir" && pwd)" != "$(cd "$DOTFILES" && cd "$common_dir" && pwd)" ]; then
+    echo "  ✗ $DOTFILES is a linked worktree; run install.sh from the main checkout" >&2
+    exit 1
+fi
+
 link_failures=0
 
 link() {
@@ -32,8 +42,12 @@ link() {
         unlink "$dest"
     elif [ -f "$dest" ]; then
         # It's a regular file, back it up first
-        echo "  Backing up existing file: $dest -> $dest.backup"
-        mv "$dest" "$dest.backup"
+        # Timestamped: a plain .backup silently overwrote the previous one, so the second
+        # run through a path destroyed whatever the first run had saved.
+        local backup
+        backup="$dest.backup.$(date +%Y%m%d%H%M%S)"
+        echo "  Backing up existing file: $dest -> $backup"
+        mv "$dest" "$backup"
     elif [ -d "$dest" ]; then
         # It's a directory, don't remove it
         echo "  ERROR: $dest is a directory, not replacing"
@@ -43,9 +57,10 @@ link() {
 
     # Create symlink
     ln -s "$src" "$dest"
-    # Make immutable where the filesystem allows it. Real on macOS (chflags -h acts on the
-    # link itself); a no-op on WSL, where chattr cannot read or set flags on a symlink at
-    # all -- so do not count on these links being write-protected on Linux.
+    # Make immutable where the OS allows it. Real on macOS, where chflags -h acts on the link
+    # itself. Dead on Linux generally, not just WSL: chattr opens with O_NOFOLLOW and the
+    # flags ioctl is unsupported on symlink inodes, so both lines are no-ops there. Do not
+    # rely on these links being write-protected anywhere but macOS.
     chattr +i "$dest" 2>/dev/null || chflags -h uchg "$dest" 2>/dev/null || true
     echo "  ✓ Linked $dest"
 }

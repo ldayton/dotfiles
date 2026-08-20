@@ -2,7 +2,7 @@
   // UI
   "theme": {
     "mode": "light",
-    "light": "Modus Vivendi",
+    "light": "Ayu Light",
     "dark": "Ayu Dark"
   },
   "ui_font_size": 16,
