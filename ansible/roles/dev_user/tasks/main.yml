@@ -161,6 +161,24 @@
   become: true
   loop: "{{ dev_user_authorized_keys }}"
 
+- name: Grant passwordless sudo
+  ansible.builtin.copy:
+    content: "{{ dev_user_name }} ALL=(ALL) NOPASSWD:ALL\n"
+    dest: "/etc/sudoers.d/60-{{ dev_user_name }}"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: visudo -cf %s
+  become: true
+  when: dev_user_sudo_nopasswd | bool
+
+- name: Withdraw a sudo grant that is no longer asked for
+  ansible.builtin.file:
+    path: "/etc/sudoers.d/60-{{ dev_user_name }}"
+    state: absent
+  become: true
+  when: not (dev_user_sudo_nopasswd | bool)
+
 # The account's own key, which is what the dotfiles clone below authenticates with. It has
 # to be registered on the git host by hand -- that step is a human's, so surface it rather
 # than failing four tasks later with a bare Permission denied.

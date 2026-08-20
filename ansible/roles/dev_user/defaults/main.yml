@@ -6,6 +6,12 @@ dev_user_comment: "Lily Dayton"
 # Sudo on a box that belongs to other things is a grant worth naming per host.
 dev_user_groups: []
 
+# Passwordless sudo, written as a drop-in rather than group membership: the grant is then one
+# file to read and one file to delete, and visudo checks it before it lands. Off for the same
+# reason the groups above are empty -- an account that reaches root without re-authenticating is
+# a decision per host. Setting it false removes a grant an earlier run left behind.
+dev_user_sudo_nopasswd: false
+
 # ubuntu logs in on brew's zsh rather than /usr/bin/zsh, so the same choice here keeps the
 # two accounts on one shell. It does mean login depends on dev_user_brew_prefix being readable.
 dev_user_shell: "{{ dev_user_brew_prefix }}/bin/zsh"
