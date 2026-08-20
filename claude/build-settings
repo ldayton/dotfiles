@@ -63,5 +63,15 @@ jq -s --indent 2 '.[0] * .[1] * .[2]' \
     "$BASE" \
     <(printf '%s' "$overlay") \
     <(printf '%s' "$carried") >"$tmp"
+# Report whether anything actually changed. Without this every caller has to assume it did:
+# the ansible role marked itself changed on every run, and install.sh could not tell a fresh
+# generation from a no-op.
+if [[ -f "$DEST" ]] && cmp -s "$tmp" "$DEST"; then
+    rm -f "$tmp"
+    trap - EXIT
+    echo unchanged
+    exit 0
+fi
 mv "$tmp" "$DEST"
 trap - EXIT
+echo updated

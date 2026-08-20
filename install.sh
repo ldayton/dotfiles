@@ -116,8 +116,12 @@ link "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
 # Generating means the file the app writes to is simply not a file git tracks.
 if $DRY_RUN; then
     echo "  → Would generate: $HOME/.claude/settings.json (from $DOTFILES/claude/settings.base.json)"
-elif CLAUDE_SETTINGS_BASE="$DOTFILES/claude/settings.base.json" "$DOTFILES/claude/build-settings"; then
-    echo "  ✓ Generated $HOME/.claude/settings.json"
+elif settings_result="$(CLAUDE_SETTINGS_BASE="$DOTFILES/claude/settings.base.json" "$DOTFILES/claude/build-settings")"; then
+    if [ "$settings_result" = "unchanged" ]; then
+        echo "  = Already current: $HOME/.claude/settings.json"
+    else
+        echo "  ✓ Generated $HOME/.claude/settings.json"
+    fi
 else
     echo "  ✗ Could not generate $HOME/.claude/settings.json"
     link_failures=$((link_failures + 1))

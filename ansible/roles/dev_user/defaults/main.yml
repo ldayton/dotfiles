@@ -33,7 +33,6 @@ dev_user_links:
   - {src: ripgrep/ripgreprc, dest: .ripgreprc}
   - {src: atuin/config.toml, dest: .config/atuin/config.toml}
   - {src: starship/starship.toml, dest: .config/starship.toml}
-  - {src: claude/settings.json, dest: .claude/settings.json}
   - {src: vscode/settings.json, dest: .config/Code/User/settings.json}
   - {src: zed/settings.json, dest: .config/zed/settings.json}
   - {src: zed/keymap.json, dest: .config/zed/keymap.json}
