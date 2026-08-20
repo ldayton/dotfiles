@@ -11,13 +11,13 @@
   loop: "{{ link_list }}"
   loop_control:
     label: "{{ item.src }}"
-  register: link_sources
+  register: dev_user_link_sources
 
 - name: "Fail on any missing source ({{ link_root | basename }})"
   ansible.builtin.fail:
     msg: "Missing link sources in {{ link_root }}: {{ missing | join(', ') }}"
   vars:
-    missing: "{{ link_sources.results | rejectattr('stat.exists') | map(attribute='item.src') | list }}"
+    missing: "{{ dev_user_link_sources.results | rejectattr('stat.exists') | map(attribute='item.src') | list }}"
   when: missing | length > 0
 
 # Skipping the home directory itself is the point of the `when`. The dirname of a dest like

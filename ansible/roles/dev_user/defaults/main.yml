@@ -6,8 +6,8 @@ dev_user_comment: "Lily Dayton"
 dev_user_groups: [sudo]
 
 # ubuntu logs in on brew's zsh rather than /usr/bin/zsh, so the same choice here keeps the
-# two accounts on one shell. It does mean login depends on brew_prefix being readable.
-dev_user_shell: "{{ brew_prefix }}/bin/zsh"
+# two accounts on one shell. It does mean login depends on dev_user_brew_prefix being readable.
+dev_user_shell: "{{ dev_user_brew_prefix }}/bin/zsh"
 
 # Point this at a larger or faster volume when the root one is small: useradd creates missing
 # parents, so any path works. Two things to know before doing that. Instance-store volumes are
@@ -24,29 +24,19 @@ dev_user_dotfiles_dest: "{{ dev_user_home }}/source/dotfiles"
 # account with `sudo -iu lily` instead, which is enough to provision it.
 dev_user_authorized_keys: []
 
-brew_prefix: /home/linuxbrew/.linuxbrew
-brew_group: brew
+dev_user_brew_prefix: /home/linuxbrew/.linuxbrew
+dev_user_brew_group: brew
 
 # Homebrew is 3.6G and officially single-owner. Rather than pay that twice:
 #   group    -- a shared group owns the prefix and both accounts may install. Convenient,
 #               and the cost is occasional permission repair after a brew upgrade.
 #   readonly -- the prefix is left alone. Binaries run fine for everyone; installs happen
 #               as whoever owns it (`sudo -u ubuntu brew install ...`). Nothing to break.
-brew_share_mode: readonly
-
-# Mirrors the link list in install.sh. src is relative to the clone, dest to the home.
-dev_user_links:
-  - {src: zsh/zshrc, dest: .zshrc}
-  - {src: ripgrep/ripgreprc, dest: .ripgreprc}
-  - {src: atuin/config.toml, dest: .config/atuin/config.toml}
-  - {src: starship/starship.toml, dest: .config/starship.toml}
-  - {src: vscode/settings.json, dest: .config/Code/User/settings.json}
-  - {src: zed/settings.json, dest: .config/zed/settings.json}
-  - {src: zed/keymap.json, dest: .config/zed/keymap.json}
+dev_user_brew_share_mode: readonly
 
 # Whoever owns the prefix runs brew. Correct in both share modes, and it keeps a readonly
 # setup from needing write access it does not have.
-brew_owner: ubuntu
+dev_user_brew_owner: ubuntu
 
 # Private overlay, off by default -- this repo stays portable and employer-agnostic. Set
 # dev_user_overlay_repo in an untracked vars file (see private.yml.example) to enable.
@@ -67,4 +57,4 @@ dev_user_git_host_keys: []
 
 # Root-owned, so the prefix owner can read the staged Brewfile without the new home being
 # made traversable, and so no other local account can pre-place the path.
-brew_stage_dir: /var/lib/dev-user-role
+dev_user_brew_stage_dir: /var/lib/dev-user-role

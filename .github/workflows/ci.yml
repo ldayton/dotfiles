@@ -1,0 +1,90 @@
+name: ci
+
+# This repo makes cross-platform claims it has never once tested. Everything below is a check that
+# a review had to make by reading: whether the shell parses under both shells, whether install.sh
+# writes nothing in a dry run, whether a second run is a no-op, and whether the playbook lints.
+#
+# macOS is the half that matters most. Nothing here has ever run on a Mac, and the review that
+# found `readlink -f`, `chattr`, keg-only `util-linux` and the Intel-Mac brew prefix found all four
+# by inspection alone.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shell:
+    name: shell (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tools the checks need
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            brew install -q shellcheck jq
+          else
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq shellcheck jq zsh
+          fi
+
+      - name: shellcheck
+        run: shellcheck -s bash install.sh gh/gh claude/build-settings
+
+      - name: The shells parse it
+        run: |
+          for f in install.sh gh/gh claude/build-settings; do bash -n "$f"; done
+          zsh -n zsh/zshrc
+
+      - name: The configs parse
+        run: |
+          python3 .github/scripts/check-json.py \
+            claude/settings.base.json vscode/settings.json zed/settings.json zed/keymap.json
+          python3 -c "import tomllib,sys; [tomllib.load(open(f,'rb')) for f in sys.argv[1:]]" \
+            atuin/config.toml starship/starship.toml
+
+      - name: A dry run writes nothing
+        run: |
+          fake="$(mktemp -d)"
+          HOME="$fake" ./install.sh --dry-run
+          found="$(find "$fake" -mindepth 1 | wc -l)"
+          [ "$found" -eq 0 ] || { echo "dry run created $found path(s)"; find "$fake" -mindepth 1; exit 1; }
+
+      - name: A real run installs, and a second run changes nothing
+        run: |
+          fake="$(mktemp -d)"
+          HOME="$fake" ./install.sh
+          [ -L "$fake/.zshrc" ] || { echo ".zshrc was not linked"; exit 1; }
+          [ -f "$fake/.claude/settings.json" ] && [ ! -L "$fake/.claude/settings.json" ] \
+            || { echo "settings.json should be a generated file, not a link"; exit 1; }
+          HOME="$fake" ./install.sh | tee second.log
+          grep -q "Already linked" second.log || { echo "second run reported no no-ops"; exit 1; }
+          ! grep -q "✓ Linked" second.log || { echo "second run relinked something"; exit 1; }
+
+  ansible:
+    name: ansible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ansible and its linter
+        run: pip install --quiet ansible-core ansible-lint
+
+      - name: The collections the role declares
+        run: ansible-galaxy collection install -r ansible/requirements.yml
+
+      # Neither of these would have caught the handler and shell defects a real run found, which is
+      # said here so nobody reads a green tick as more than it is: this is the floor, not the proof.
+      - name: The playbook parses
+        run: ansible-playbook -i ansible/inventory.ini ansible/site.yml --syntax-check
+
+      - name: The playbook lints
+        run: ansible-lint ansible/site.yml
