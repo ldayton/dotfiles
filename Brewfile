@@ -11,6 +11,7 @@ brew "fnm"         # fast Node.js version manager (auto-switches per .nvmrc)
 brew "cloc"        # code statistics
 brew "git"         # distributed version control system
 brew "gh"          # GitHub's official command line tool
+brew "git-lfs"     # large-file storage; gitconfig marks the lfs filter required
 brew "hyperfine"   # command-line benchmarking tool
 brew "just"        # command runner for project-specific tasks
 brew "lazygit"     # simple terminal UI for git commands

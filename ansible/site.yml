@@ -6,11 +6,11 @@
 #   ansible-playbook -i inventory.ini site.yml --check     # dry run first
 #   ansible-playbook -i inventory.ini site.yml
 #
-# become is set here rather than per task so every hop starts from root. Ansible has to hand
-# a module payload across accounts when become_user is not root, and between two unprivileged
-# accounts -- the invoking user and the one being provisioned -- it can only do that with
-# setfacl, which is not installed by default. Escalating to root first makes each hop
-# root -> target, which needs no acl at all.
+# become at play level makes root the default for tasks that name no become_user. It does NOT
+# make the other tasks hop root -> target: a task-level become_user replaces the play's, it does
+# not chain, so those escalations still run invoking-user -> target. Ansible can only hand a
+# module payload between two unprivileged accounts with setfacl, so the role installs acl
+# before the first such task rather than relying on it being present.
 - name: Provision the dev user
   hosts: dev
   gather_facts: true

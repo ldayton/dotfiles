@@ -32,7 +32,15 @@ die_auth() {
 self="$(realpath -- "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")"
 GH_BINARY=""
 for candidate in /opt/homebrew/bin/gh /usr/local/bin/gh /home/linuxbrew/.linuxbrew/bin/gh; do
-    [[ -x "$candidate" ]] && { GH_BINARY="$candidate"; break; }
+    [[ -x "$candidate" ]] || continue
+    # The same self-check the $PATH branch below makes, and for the same reason: if this
+    # wrapper is ever installed at one of these paths -- `ln -s .../gh/gh /usr/local/bin/gh`
+    # is the obvious way to reach it from launchd or a GUI-spawned process -- then without
+    # this it execs itself forever, with no output and no way out. /usr/local is the
+    # Homebrew prefix on Intel macOS, so that path is a live candidate there.
+    [[ "$candidate" -ef "$self" ]] && continue
+    GH_BINARY="$candidate"
+    break
 done
 if [[ -z "$GH_BINARY" ]]; then
     while IFS= read -r candidate; do

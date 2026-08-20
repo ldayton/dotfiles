@@ -1,12 +1,33 @@
 ---
+# acl first. Every task below that becomes the provisioned account escalates from the invoking
+# user, not from root -- a task-level become_user replaces the play's rather than chaining --
+# and Ansible can only pass a module payload between two unprivileged accounts via setfacl.
+# Without this the run stops at the first such task with a permissions error about temporary
+# files. This task itself becomes root, which needs no acl.
+- name: Ensure acl is present, so module payloads can reach an unprivileged account
+  ansible.builtin.package:
+    name: acl
+    state: present
+  become: true
+
 # Homebrew first: the account's login shell lives inside the prefix, so it has to be
 # reachable before the user is created or the first login has no shell to land in.
+# The role does not install Homebrew; it only shares an existing prefix. Every brew task is
+# gated on the prefix actually being there, including the ungated remediation below -- a bare
+# find on a missing path exits 1, which would have killed the play on any host without it.
+- name: Check whether the Homebrew prefix exists
+  ansible.builtin.stat:
+    path: "{{ brew_prefix }}"
+  register: brew_prefix_stat
+
 - name: Ensure the shared brew group exists
   ansible.builtin.group:
     name: "{{ brew_group }}"
     state: present
   become: true
-  when: brew_share_mode == 'group'
+  when:
+    - brew_share_mode == 'group'
+    - brew_prefix_stat.stat.isdir | default(false)
 
 - name: Give the brew group ownership of the prefix
   ansible.builtin.file:
@@ -14,7 +35,9 @@
     group: "{{ brew_group }}"
     recurse: true
   become: true
-  when: brew_share_mode == 'group'
+  when:
+    - brew_share_mode == 'group'
+    - brew_prefix_stat.stat.isdir | default(false)
 
 # Mode is set with find rather than the file module's recurse, because setgid belongs on
 # directories and nowhere else. The module's symbolic modes have no "directories only"
@@ -29,7 +52,9 @@
   become: true
   register: brew_dirs
   changed_when: brew_dirs.stdout | length > 0
-  when: brew_share_mode == 'group'
+  when:
+    - brew_share_mode == 'group'
+    - brew_prefix_stat.stat.isdir | default(false)
 
 - name: Group-write on files, without setgid
   ansible.builtin.command:
@@ -37,7 +62,9 @@
   become: true
   register: brew_files
   changed_when: brew_files.stdout | length > 0
-  when: brew_share_mode == 'group'
+  when:
+    - brew_share_mode == 'group'
+    - brew_prefix_stat.stat.isdir | default(false)
 
 # Remediation for a prefix an earlier revision of this role already widened. Both bits are
 # required in the predicate: setgid alone is how a handful of formulae legitimately ship,
@@ -51,6 +78,7 @@
   become: true
   register: brew_setgid
   changed_when: brew_setgid.stdout | length > 0
+  when: brew_prefix_stat.stat.isdir | default(false)
 
 - name: Create the account
   ansible.builtin.user:
