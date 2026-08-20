@@ -58,3 +58,15 @@ dev_user_git_host_keys: []
 # Root-owned, so the prefix owner can read the staged Brewfile without the new home being
 # made traversable, and so no other local account can pre-place the path.
 dev_user_brew_stage_dir: /var/lib/dev-user-role
+
+# Claude Code, installed into the account's own home by Anthropic's native installer. Set the
+# channel to "stable" for the roughly week-old release, or to an exact version to pin one; empty
+# means the default channel. A native install updates itself in the background, which is right for
+# something used interactively and wrong for anything that has to be reproducible -- pin it if this
+# account is ever something a build depends on.
+#
+# apt is the alternative: Anthropic publish a signed repository, which trades the self-update for a
+# GPG-verified package and a system-wide install. The native installer is what this uses because it
+# keeps the tool inside the home, like everything else this role puts there.
+dev_user_claude_code: true
+dev_user_claude_code_channel: ""
