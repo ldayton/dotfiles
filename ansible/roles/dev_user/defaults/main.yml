@@ -58,6 +58,7 @@ dev_user_git_host_keys: []
 # Root-owned, so the prefix owner can read the staged Brewfile without the new home being
 # made traversable, and so no other local account can pre-place the path.
 dev_user_brew_stage_dir: /var/lib/dev-user-role
+<<<<<<< HEAD
 
 # Claude Code, installed into the account's own home by Anthropic's native installer. Set the
 # channel to "stable" for the roughly week-old release, or to an exact version to pin one; empty
@@ -70,3 +71,5 @@ dev_user_brew_stage_dir: /var/lib/dev-user-role
 # keeps the tool inside the home, like everything else this role puts there.
 dev_user_claude_code: true
 dev_user_claude_code_channel: ""
+=======
+>>>>>>> origin/main
