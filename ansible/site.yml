@@ -6,6 +6,11 @@
 #   ansible-playbook -i inventory.ini site.yml --check     # dry run first
 #   ansible-playbook -i inventory.ini site.yml
 #
+# The inventory ships empty, so name the target under [dev] first — a run that provisions nothing
+# is the right answer to a run that was not told what to provision. `--check` cannot reach the
+# clone: `uri` has no check mode, so the host-key fetch is skipped and the guard that refuses an
+# unpinned clone fires on the empty list rather than on a real absence.
+#
 # become at play level makes root the default for tasks that name no become_user. It does NOT
 # make the other tasks hop root -> target: a task-level become_user replaces the play's, it does
 # not chain, so those escalations still run invoking-user -> target. Ansible can only hand a
