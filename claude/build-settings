@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Generates ~/.claude/settings.json from the tracked base, an optional private overlay, and
+# whatever Claude Code has written into the file itself.
+#
+# This replaces symlinking the tracked file into place. That arrangement needed a clean filter
+# to keep `model` out of commits, and skip-worktree to silence the churn the filter could not
+# -- and skip-worktree makes git ignore the file outright, which is how a block of hooks sat
+# in the committed config for months after being deleted from disk. Generating instead means
+# the file Claude Code writes to is not a file git tracks, so there is nothing to hide.
+#
+# Same base+local split as CLAUDE.md, zshrc and the gh policy hook. The overlay is private and
+# per-machine; it is never created by this repo.
+
+set -euo pipefail
+
+BASE="${CLAUDE_SETTINGS_BASE:-$HOME/source/dotfiles/claude/settings.base.json}"
+OVERLAY="${CLAUDE_SETTINGS_OVERLAY:-$HOME/.claude/settings.overlay.json}"
+DEST="${CLAUDE_SETTINGS_DEST:-$HOME/.claude/settings.json}"
+
+command -v jq >/dev/null 2>&1 || {
+    echo "build-settings: jq is required" >&2
+    exit 1
+}
+[[ -f "$BASE" ]] || {
+    echo "build-settings: no base file at $BASE" >&2
+    exit 1
+}
+
+mkdir -p "$(dirname "$DEST")"
+
+# Keys Claude Code writes back into settings.json itself. Carried across a rebuild so that
+# switching model does not silently revert the next time a shell starts. Anything not listed
+# here is owned by the base and the overlay, and is meant to be reset on every build.
+CARRIED_KEYS='{model}'
+
+carried='{}'
+if [[ -f "$DEST" ]]; then
+    carried="$(jq -c "$CARRIED_KEYS | with_entries(select(.value != null))" "$DEST" 2>/dev/null || echo '{}')"
+fi
+
+overlay='{}'
+if [[ -f "$OVERLAY" ]]; then
+    jq -e . "$OVERLAY" >/dev/null 2>&1 || {
+        echo "build-settings: $OVERLAY is not valid JSON" >&2
+        exit 1
+    }
+    overlay="$(jq -c . "$OVERLAY")"
+fi
+
+# Later wins: base, then the private overlay, then what the app itself last wrote. `mv` rather
+# than `>` so a failure part-way cannot leave a truncated settings file behind, and so this is
+# safe when two shells start at once. It also replaces the old symlink on an existing machine.
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+jq -s --indent 2 '.[0] * .[1] * .[2]' \
+    "$BASE" \
+    <(printf '%s' "$overlay") \
+    <(printf '%s' "$carried") >"$tmp"
+mv "$tmp" "$DEST"
+trap - EXIT
