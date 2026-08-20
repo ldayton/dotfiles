@@ -1,0 +1,228 @@
+---
+# Homebrew first: the account's login shell lives inside the prefix, so it has to be
+# reachable before the user is created or the first login has no shell to land in.
+- name: Ensure the shared brew group exists
+  ansible.builtin.group:
+    name: "{{ brew_group }}"
+    state: present
+  become: true
+  when: brew_share_mode == 'group'
+
+- name: Give the brew group ownership of the prefix
+  ansible.builtin.file:
+    path: "{{ brew_prefix }}"
+    group: "{{ brew_group }}"
+    recurse: true
+  become: true
+  when: brew_share_mode == 'group'
+
+# Mode is set with find rather than the file module's recurse, because setgid belongs on
+# directories and nowhere else. The module's symbolic modes have no "directories only"
+# form: g+rwXs limits the execute bit to directories via X, but applies s to every regular
+# file too. That turns each of the prefix's binaries into a setgid executable while g+w
+# leaves them group-writable, so any local account on the machine -- a CI runner or a
+# remote-session user, on a shared box there is usually one -- can enter the group through
+# any of them and rewrite the rest, including the login shell of whoever has sudo.
+- name: Setgid and group-write on directories, so new packages inherit the group
+  ansible.builtin.command:
+    cmd: find {{ brew_prefix }} -type d ! -perm -g+ws -printf . -exec chmod g+rwxs {} +
+  become: true
+  register: brew_dirs
+  changed_when: brew_dirs.stdout | length > 0
+  when: brew_share_mode == 'group'
+
+- name: Group-write on files, without setgid
+  ansible.builtin.command:
+    cmd: find {{ brew_prefix }} -type f ! -perm -g+w -printf . -exec chmod g+w {} +
+  become: true
+  register: brew_files
+  changed_when: brew_files.stdout | length > 0
+  when: brew_share_mode == 'group'
+
+# Remediation for a prefix an earlier revision of this role already widened.
+- name: Strip setgid from any regular file in the prefix
+  ansible.builtin.command:
+    cmd: find {{ brew_prefix }} -type f -perm -g+s -printf . -exec chmod g-s {} +
+  become: true
+  register: brew_setgid
+  changed_when: brew_setgid.stdout | length > 0
+
+- name: Create the account
+  ansible.builtin.user:
+    name: "{{ dev_user_name }}"
+    comment: "{{ dev_user_comment }}"
+    shell: "{{ dev_user_shell }}"
+    home: "{{ dev_user_home }}"
+    groups: "{{ dev_user_groups + ([brew_group] if brew_share_mode == 'group' else []) }}"
+    append: true
+    create_home: true
+    generate_ssh_key: true
+    ssh_key_type: ed25519
+    ssh_key_file: .ssh/id_ed25519
+    ssh_key_comment: "{{ dev_user_name }}@{{ ansible_hostname }}"
+  become: true
+  register: dev_user_created
+
+- name: Authorize keys for direct ssh
+  ansible.posix.authorized_key:
+    user: "{{ dev_user_name }}"
+    key: "{{ item }}"
+    state: present
+  become: true
+  loop: "{{ dev_user_authorized_keys }}"
+
+# The account's own key, which is what the dotfiles clone below authenticates with. It has
+# to be registered on the git host by hand -- that step is a human's, so surface it rather
+# than failing four tasks later with a bare Permission denied.
+- name: Show the account's public key
+  ansible.builtin.debug:
+    msg:
+      - "Add this to the git host before the clone step can succeed:"
+      - "{{ dev_user_created.ssh_public_key | default('(key already existed; cat ' + dev_user_home + '/.ssh/id_ed25519.pub)') }}"
+
+# Host keys are pinned before the first clone rather than accepted on sight. The account is
+# created fresh above with an empty known_hosts, so accept_hostkey would take the trust-on-
+# first-use branch every time, not as a rare fallback. Whoever wins that race serves a tree
+# this play then links into ~/.zshrc and hands to brew bundle as a sudoer, so the clone is
+# the wrong place to be lenient. GitHub publishes its keys over TLS, which is a verified
+# channel; for any other host, set dev_user_git_host_keys explicitly.
+- name: Fetch the git host's published SSH keys over TLS
+  ansible.builtin.uri:
+    url: "{{ dev_user_git_host_keys_url }}"
+    return_content: true
+  register: git_host_meta
+  when:
+    - dev_user_git_host_keys | length == 0
+    - dev_user_git_host_keys_url | length > 0
+
+- name: Resolve which host keys to pin
+  ansible.builtin.set_fact:
+    git_host_keys: >-
+      {{ dev_user_git_host_keys if dev_user_git_host_keys | length > 0
+         else (git_host_meta.json.ssh_keys | default([])) }}
+
+- name: Refuse to clone with no host key to verify against
+  ansible.builtin.fail:
+    msg: >-
+      No SSH host keys resolved for {{ dev_user_git_host }}. Set dev_user_git_host_keys, or
+      point dev_user_git_host_keys_url at an endpoint publishing them over TLS. Cloning
+      without a pinned key would trust whatever answers on the network.
+  when: git_host_keys | length == 0
+
+- name: Pin the git host keys
+  ansible.builtin.known_hosts:
+    name: "{{ dev_user_git_host }}"
+    key: "{{ dev_user_git_host }} {{ item }}"
+    state: present
+  become: true
+  become_user: "{{ dev_user_name }}"
+  loop: "{{ git_host_keys }}"
+  loop_control:
+    label: "{{ item.split(' ')[0] }}"
+
+- name: Clone the dotfiles
+  ansible.builtin.git:
+    repo: "{{ dev_user_dotfiles_repo }}"
+    dest: "{{ dev_user_dotfiles_dest }}"
+    version: main
+    update: false
+  become: true
+  become_user: "{{ dev_user_name }}"
+  register: dotfiles_clone
+  failed_when:
+    - dotfiles_clone.failed
+    - "'Permission denied' not in (dotfiles_clone.msg | default(''))"
+
+- name: Explain a clone that failed on authentication
+  ansible.builtin.fail:
+    msg: >-
+      Could not clone {{ dev_user_dotfiles_repo }} as {{ dev_user_name }}. Register the
+      public key printed above with the git host, then re-run. To use a different account
+      or a read-only URL, override dev_user_dotfiles_repo.
+  when: dotfiles_clone.failed | default(false)
+
+- name: Link the base dotfiles
+  ansible.builtin.include_tasks: links.yml
+  vars:
+    link_root: "{{ dev_user_dotfiles_dest }}"
+    link_list: "{{ dev_user_links }}"
+
+# gitconfig is copied rather than linked, and never overwritten: user.email is per-account,
+# and the tracked copy deliberately carries no email at all. force: false is what makes this
+# a seed rather than a config that gets reset on every run.
+- name: Seed gitconfig without clobbering an existing one
+  ansible.builtin.copy:
+    src: "{{ dev_user_dotfiles_dest }}/git/gitconfig"
+    dest: "{{ dev_user_home }}/.gitconfig"
+    remote_src: true
+    force: false
+    mode: "0644"
+  become: true
+  become_user: "{{ dev_user_name }}"
+
+# Claude Code rewrites the current model into settings.json on every switch, which would
+# leave the clone permanently dirty with a per-machine value. The clean filter strips the
+# key at stage time; skip-worktree silences the status noise the filter cannot.
+- name: Configure the claude-settings clean filter
+  community.general.git_config:
+    name: "filter.claude-settings.{{ item.key }}"
+    value: "{{ item.value }}"
+    scope: local
+    repo: "{{ dev_user_dotfiles_dest }}"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  loop:
+    - {key: clean, value: "jq --indent 2 'del(.model)'"}
+    - {key: smudge, value: cat}
+  loop_control:
+    label: "filter.claude-settings.{{ item.key }}"
+
+- name: Mark settings.json skip-worktree
+  ansible.builtin.command:
+    cmd: git update-index --skip-worktree claude/settings.json
+    chdir: "{{ dev_user_dotfiles_dest }}"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  register: skip_worktree
+  changed_when: skip_worktree.rc == 0
+
+# Packages live in the shared prefix, so they are installed once by whoever owns it rather
+# than per account. `bundle check` is what makes this idempotent -- `brew bundle` alone
+# always reports work done, and would mark the play changed on every run.
+- name: Check whether the Brewfile is already satisfied
+  ansible.builtin.command:
+    cmd: "{{ brew_prefix }}/bin/brew bundle check --file={{ dev_user_dotfiles_dest }}/Brewfile"
+  become: true
+  become_user: "{{ brew_owner }}"
+  register: brew_check
+  changed_when: false
+  failed_when: false
+
+- name: Install the Brewfile
+  ansible.builtin.command:
+    cmd: "{{ brew_prefix }}/bin/brew bundle --file={{ dev_user_dotfiles_dest }}/Brewfile"
+  become: true
+  become_user: "{{ brew_owner }}"
+  when: brew_check.rc != 0
+  register: brew_bundle
+  changed_when: brew_bundle.rc == 0
+
+# The private overlay. This repo is public and deliberately knows nothing about any
+# employer, so the default is empty and the whole block is skipped. Supply the repo in an
+# untracked vars file to turn it on:  ansible-playbook ... -e @private.yml
+- name: Clone the private overlay
+  ansible.builtin.git:
+    repo: "{{ dev_user_overlay_repo }}"
+    dest: "{{ dev_user_overlay_dest }}"
+    version: "{{ dev_user_overlay_version }}"
+    update: false
+  become: true
+  become_user: "{{ dev_user_name }}"
+  when: dev_user_overlay_repo | length > 0
+
+- name: Link the private overlay
+  ansible.builtin.include_tasks: links.yml
+  vars:
+    link_root: "{{ dev_user_overlay_dest }}"
+    link_list: "{{ dev_user_overlay_links }}"
+  when: dev_user_overlay_repo | length > 0

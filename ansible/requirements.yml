@@ -1,0 +1,6 @@
+---
+# authorized_key lives in ansible.posix; git_config in community.general. Install with:
+#   ansible-galaxy collection install -r requirements.yml
+collections:
+  - name: ansible.posix
+  - name: community.general
