@@ -21,7 +21,7 @@
   {
     "context": "Workspace",
     "bindings": {
-      "cmd-t": "terminal_panel::Toggle"
+      "secondary-t": "terminal_panel::Toggle"
     }
   }
 ]

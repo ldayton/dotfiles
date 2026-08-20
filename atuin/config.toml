@@ -11,7 +11,3 @@ inline_height = 20
 
 # Enable immediate command execution on Enter (Tab to edit)
 enter_accept = false
-
-# Enable sync v2
-[sync]
-records = true

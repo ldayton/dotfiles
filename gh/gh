@@ -112,6 +112,11 @@ done
 
 account="$(git -C "$repo_path" config gh.account 2>/dev/null)"
 
+# -C is consumed above, so a bypass hint built from gh_args alone would drop it and send the
+# reader at the wrong repo -- the very wrong-account outcome the refusal exists to prevent.
+bypass_c=""
+[[ "$repo_path" != "." ]] && bypass_c=" -C $repo_path"
+
 if [[ "$want_which" == true ]]; then
     printf '%s\n' "${account:-default}"
     exit 0
@@ -133,6 +138,17 @@ if [[ -n "${GH_TOKEN:-}" ]]; then
     # signal -- a direnv .envrc, a CI secret -- and overwriting it from git config surfaced
     # only as "Bad credentials", with nothing naming this wrapper as the cause.
     [[ -n "$account" ]] && echo "gh-wrapper: GH_TOKEN is set in the environment; ignoring gh.account=$account." >&2
+elif [[ -z "$account" && "$needs_token" == true ]]; then
+    # No gh.account here, so gh falls back to whichever account is active. That is fine with
+    # one account and treacherous with two: reads of a private repo the active account cannot
+    # see return 404, not 403, so the failure is indistinguishable from the repo not existing.
+    # Only warn when the ambiguity is real -- a single-account machine stays quiet.
+    if [[ "$("$GH_BINARY" auth status 2>/dev/null | grep -c 'Logged in to')" -gt 1 ]]; then
+        active="$("$GH_BINARY" auth status --active 2>/dev/null \
+            | awk '/ account /{for(i=1;i<=NF;i++) if($i=="account") {print $(i+1); exit}}')"
+        echo "gh-wrapper: no gh.account set for $repo_path; using the active account${active:+ ($active)}." >&2
+        echo "gh-wrapper: with more than one account authenticated, a 404 here may mean wrong identity rather than missing." >&2
+    fi
 elif [[ -n "$account" && "$needs_token" == true ]]; then
     token="$("$GH_BINARY" auth token --user "$account" 2>/dev/null)"
     # Stop instead of falling through to whichever account happens to be active. That
@@ -143,7 +159,7 @@ elif [[ -n "$account" && "$needs_token" == true ]]; then
         "gh would otherwise have run as a different account than the repo asks for, so this is a refusal, not a warning." \
         "  Log in:  gh auth login   (choose $account)" \
         "  Check:   gh auth status" \
-        "  Bypass:  GH_WRAPPER_DISABLE=1 gh ${gh_args[*]:-...}"
+        "  Bypass:  GH_WRAPPER_DISABLE=1 gh${bypass_c} ${gh_args[*]:-...}"
     export GH_TOKEN="$token"
 fi
 
@@ -156,7 +172,7 @@ GH_POLICY="${GH_POLICY:-$HOME/.config/gh-wrapper/policy.sh}"
 if [[ -f "$GH_POLICY" ]]; then
     # shellcheck source=/dev/null
     source "$GH_POLICY" || die "policy hook failed to load: $GH_POLICY" \
-        "  Bypass: GH_WRAPPER_DISABLE=1 gh ${gh_args[*]:-...}"
+        "  Bypass: GH_WRAPPER_DISABLE=1 gh${bypass_c} ${gh_args[*]:-...}"
     if declare -F gh_policy_check >/dev/null; then
         gh_policy_check ${gh_args[@]+"${gh_args[@]}"}
         policy_status=$?
