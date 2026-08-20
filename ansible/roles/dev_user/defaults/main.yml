@@ -1,0 +1,64 @@
+---
+# The account this role provisions. Everything carrying identity -- ssh keys, gh tokens,
+# ~/.claude, shell and atuin history -- lands inside its home and is shared with nobody.
+dev_user_name: lily
+dev_user_comment: "Lily Dayton"
+dev_user_groups: [sudo]
+
+# ubuntu logs in on brew's zsh rather than /usr/bin/zsh, so the same choice here keeps the
+# two accounts on one shell. It does mean login depends on brew_prefix being readable.
+dev_user_shell: "{{ brew_prefix }}/bin/zsh"
+
+dev_user_home: "/home/{{ dev_user_name }}"
+dev_user_dotfiles_repo: git@github.com:ldayton/dotfiles.git
+dev_user_dotfiles_dest: "{{ dev_user_home }}/source/dotfiles"
+
+# Public keys authorized to log in as this user. Empty means no direct ssh -- reach the
+# account with `sudo -iu lily` instead, which is enough to provision it.
+dev_user_authorized_keys: []
+
+brew_prefix: /home/linuxbrew/.linuxbrew
+brew_group: brew
+
+# Homebrew is 3.6G and officially single-owner. Rather than pay that twice:
+#   group    -- a shared group owns the prefix and both accounts may install. Convenient,
+#               and the cost is occasional permission repair after a brew upgrade.
+#   readonly -- the prefix is left alone. Binaries run fine for everyone; installs happen
+#               as whoever owns it (`sudo -u ubuntu brew install ...`). Nothing to break.
+brew_share_mode: readonly
+
+# Mirrors the link list in install.sh. src is relative to the clone, dest to the home.
+dev_user_links:
+  - {src: zsh/zshrc, dest: .zshrc}
+  - {src: ripgrep/ripgreprc, dest: .ripgreprc}
+  - {src: atuin/config.toml, dest: .config/atuin/config.toml}
+  - {src: starship/starship.toml, dest: .config/starship.toml}
+  - {src: claude/settings.json, dest: .claude/settings.json}
+  - {src: vscode/settings.json, dest: .config/Code/User/settings.json}
+  - {src: zed/settings.json, dest: .config/zed/settings.json}
+  - {src: zed/keymap.json, dest: .config/zed/keymap.json}
+
+# Whoever owns the prefix runs brew. Correct in both share modes, and it keeps a readonly
+# setup from needing write access it does not have.
+brew_owner: ubuntu
+
+# Private overlay, off by default -- this repo stays portable and employer-agnostic. Set
+# dev_user_overlay_repo in an untracked vars file (see private.yml.example) to enable.
+dev_user_overlay_repo: ""
+dev_user_overlay_version: main
+dev_user_overlay_dest: "{{ dev_user_home }}/dev/private-dotfiles"
+dev_user_overlay_links:
+  - {src: claude/CLAUDE.local.md, dest: .claude/CLAUDE.local.md}
+  - {src: zsh/zshrc.local, dest: .zshrc.local}
+  - {src: gh/policy.sh, dest: .config/gh-wrapper/policy.sh}
+
+# The git host is pinned before the first clone instead of trusted on sight. GitHub
+# publishes its SSH host keys over TLS, which is a verified channel; for any other host,
+# set dev_user_git_host_keys directly and leave the URL empty.
+dev_user_git_host: github.com
+dev_user_git_host_keys_url: https://api.github.com/meta
+dev_user_git_host_keys: []
+
+# Root-owned, so the prefix owner can read the staged Brewfile without the new home being
+# made traversable, and so no other local account can pre-place the path.
+brew_stage_dir: /var/lib/dev-user-role

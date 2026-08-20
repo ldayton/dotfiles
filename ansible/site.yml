@@ -1,0 +1,19 @@
+---
+# Provisions a namespaced dev account on a box that belongs to other things too. Run it
+# from an account with sudo; it touches nothing outside the new home except the Homebrew
+# group, and only then when brew_share_mode is 'group'.
+#
+#   ansible-playbook -i inventory.ini site.yml --check     # dry run first
+#   ansible-playbook -i inventory.ini site.yml
+#
+# become is set here rather than per task so every hop starts from root. Ansible has to hand
+# a module payload across accounts when become_user is not root, and between two unprivileged
+# accounts -- the invoking user and the one being provisioned -- it can only do that with
+# setfacl, which is not installed by default. Escalating to root first makes each hop
+# root -> target, which needs no acl at all.
+- name: Provision the dev user
+  hosts: dev
+  gather_facts: true
+  become: true
+  roles:
+    - dev_user

@@ -1,0 +1,44 @@
+---
+# Shared by the base dotfiles and the private overlay. Expects link_root (a clone) and
+# link_list (src relative to that clone, dest relative to the home).
+#
+# install.sh refuses to link a source that does not exist, because `ln -s` will happily
+# create a dangling link that nothing reports until something reads through it. The file
+# module behaves the same way, so the guard is kept rather than assumed.
+- name: "Stat the link sources ({{ link_root | basename }})"
+  ansible.builtin.stat:
+    path: "{{ link_root }}/{{ item.src }}"
+  loop: "{{ link_list }}"
+  loop_control:
+    label: "{{ item.src }}"
+  register: link_sources
+
+- name: "Fail on any missing source ({{ link_root | basename }})"
+  ansible.builtin.fail:
+    msg: "Missing link sources in {{ link_root }}: {{ missing | join(', ') }}"
+  vars:
+    missing: "{{ link_sources.results | rejectattr('stat.exists') | map(attribute='item.src') | list }}"
+  when: missing | length > 0
+
+- name: "Ensure the link destinations have parents ({{ link_root | basename }})"
+  ansible.builtin.file:
+    path: "{{ (dev_user_home ~ '/' ~ item.dest) | dirname }}"
+    state: directory
+    mode: "0755"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  loop: "{{ link_list }}"
+  loop_control:
+    label: "{{ (dev_user_home ~ '/' ~ item.dest) | dirname }}"
+
+- name: "Link into place ({{ link_root | basename }})"
+  ansible.builtin.file:
+    src: "{{ link_root }}/{{ item.src }}"
+    dest: "{{ dev_user_home }}/{{ item.dest }}"
+    state: link
+    force: true
+  become: true
+  become_user: "{{ dev_user_name }}"
+  loop: "{{ link_list }}"
+  loop_control:
+    label: "{{ item.dest }}"

@@ -1,0 +1,9 @@
+---
+# Copy to private.yml (gitignored) and pass with: ansible-playbook ... -e @private.yml
+# Anything employer-specific or otherwise private belongs here, never in the tracked
+# defaults -- the same base+local split CLAUDE.md, zshrc and the gh policy hook already use.
+# This repo is public; keep real hostnames, org names and keys out of it.
+dev_user_overlay_repo: git@github.com:YOUR-ORG/YOUR-PRIVATE-DOTFILES.git
+
+dev_user_authorized_keys:
+  - "ssh-ed25519 AAAA... you@somewhere"

@@ -7,3 +7,4 @@ brewfile.*.lock.json
 /claude/bashlex-debug.py
 __pycache__
 
+/ansible/private.yml
