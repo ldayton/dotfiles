@@ -315,8 +315,9 @@
   register: dev_user_brew_check
   changed_when: false
   failed_when: false
-  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
-  when: dev_user_brewfile | bool
+  when:
+    - dev_user_brewfile | bool
+    - dev_user_brew_prefix_stat.stat.isdir | default(false)
 
 - name: Install the Brewfile
   ansible.builtin.command:
