@@ -20,6 +20,12 @@
     path: "{{ dev_user_brew_prefix }}"
   register: dev_user_brew_prefix_stat
 
+- name: Whoever owns the prefix is who runs brew
+  ansible.builtin.set_fact:
+    dev_user_brew_runner: >-
+      {{ dev_user_brew_owner if dev_user_brew_owner | length > 0
+         else (dev_user_brew_prefix_stat.stat.pw_name | default('root')) }}
+
 - name: Ensure the shared brew group exists
   ansible.builtin.group:
     name: "{{ dev_user_brew_group }}"
@@ -206,7 +212,7 @@
   ansible.builtin.git:
     repo: "{{ dev_user_dotfiles_repo }}"
     dest: "{{ dev_user_dotfiles_dest }}"
-    version: main
+    version: "{{ dev_user_dotfiles_version }}"
     update: false
   become: true
   become_user: "{{ dev_user_name }}"
@@ -284,7 +290,9 @@
     group: root
     mode: "0755"
   become: true
-  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
+  when:
+    - dev_user_brewfile | bool
+    - dev_user_brew_prefix_stat.stat.isdir | default(false)
 
 - name: Stage the Brewfile where the prefix owner can read it
   ansible.builtin.copy:
@@ -295,24 +303,29 @@
     group: root
     mode: "0644"
   become: true
-  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
+  when:
+    - dev_user_brewfile | bool
+    - dev_user_brew_prefix_stat.stat.isdir | default(false)
 
 - name: Check whether the Brewfile is already satisfied
   ansible.builtin.command:
     cmd: "{{ dev_user_brew_prefix }}/bin/brew bundle check --file={{ dev_user_brew_stage_dir }}/Brewfile"
   become: true
-  become_user: "{{ dev_user_brew_owner }}"
+  become_user: "{{ dev_user_brew_runner }}"
   register: dev_user_brew_check
   changed_when: false
   failed_when: false
-  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
+  when:
+    - dev_user_brewfile | bool
+    - dev_user_brew_prefix_stat.stat.isdir | default(false)
 
 - name: Install the Brewfile
   ansible.builtin.command:
     cmd: "{{ dev_user_brew_prefix }}/bin/brew bundle --file={{ dev_user_brew_stage_dir }}/Brewfile"
   become: true
-  become_user: "{{ dev_user_brew_owner }}"
+  become_user: "{{ dev_user_brew_runner }}"
   when:
+    - dev_user_brewfile | bool
     - dev_user_brew_prefix_stat.stat.isdir | default(false)
     - dev_user_brew_check.rc | default(0) != 0
   register: dev_user_brew_bundle

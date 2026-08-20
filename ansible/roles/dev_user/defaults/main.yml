@@ -18,6 +18,10 @@ dev_user_shell: "{{ dev_user_brew_prefix }}/bin/zsh"
 dev_user_home: "/home/{{ dev_user_name }}"
 dev_user_home_require_separate_fs: false
 dev_user_dotfiles_repo: git@github.com:ldayton/dotfiles.git
+# A variable for the same reason the overlay's is: pinning the branch, or provisioning from a
+# commit that is not on main, should not require editing the task. Hardcoding it meant the role
+# could only ever clone main, which CI found the moment it provisioned from a pull request.
+dev_user_dotfiles_version: main
 dev_user_dotfiles_dest: "{{ dev_user_home }}/source/dotfiles"
 
 # Public keys authorized to log in as this user. Empty means no direct ssh -- reach the
@@ -34,9 +38,12 @@ dev_user_brew_group: brew
 #               as whoever owns it (`sudo -u ubuntu brew install ...`). Nothing to break.
 dev_user_brew_share_mode: readonly
 
-# Whoever owns the prefix runs brew. Correct in both share modes, and it keeps a readonly
-# setup from needing write access it does not have.
-dev_user_brew_owner: ubuntu
+# Whoever owns the prefix runs brew. Empty means ask the filesystem, which is the only answer
+# that is true everywhere: the prefix's owner IS the account that installed it. A literal here was
+# the cloud image's account name, and it was wrong on the first machine that was not that image --
+# the run then tried to become a user who did not exist and failed on a temp-file permission it
+# could not set.
+dev_user_brew_owner: ""
 
 # Private overlay, off by default -- this repo stays portable and employer-agnostic. Set
 # dev_user_overlay_repo in an untracked vars file (see private.yml.example) to enable.
@@ -58,6 +65,11 @@ dev_user_git_host_keys: []
 # Root-owned, so the prefix owner can read the staged Brewfile without the new home being
 # made traversable, and so no other local account can pre-place the path.
 dev_user_brew_stage_dir: /var/lib/dev-user-role
+
+# Whether to install the Brewfile at all. On by default, because a dev account without its tools
+# is half an account -- but installing forty-odd formulae is minutes, and provisioning an account
+# is not always the same errand as populating a machine.
+dev_user_brewfile: true
 
 # Claude Code, installed into the account's own home by Anthropic's native installer. Set the
 # channel to "stable" for the roughly week-old release, or to an exact version to pin one; empty
