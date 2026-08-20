@@ -7,6 +7,8 @@ DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 
 echo "Installing dotfiles from $DOTFILES"
 
+link_failures=0
+
 link() {
     local src="$1"
     local dest="$2"
@@ -16,7 +18,8 @@ link() {
     # That is how ~/.claude/statusline.py outlived the statusline it was pointing at.
     if [ ! -e "$src" ]; then
         echo "  ✗ MISSING SOURCE: $src (not linking)"
-        return 1
+        link_failures=$((link_failures + 1))
+        return 0
     fi
 
     # Create parent directory if needed
@@ -34,7 +37,8 @@ link() {
     elif [ -d "$dest" ]; then
         # It's a directory, don't remove it
         echo "  ERROR: $dest is a directory, not replacing"
-        return 1
+        link_failures=$((link_failures + 1))
+        return 0
     fi
 
     # Create symlink
@@ -56,22 +60,14 @@ if [ -f "$DOTFILES/git/gitconfig" ]; then
         echo "  ✓ Copied $HOME/.gitconfig"
     fi
 fi
-if [ -f "$DOTFILES/ripgrep/ripgreprc" ]; then
-    link "$DOTFILES/ripgrep/ripgreprc" "$HOME/.ripgreprc"
-fi
+link "$DOTFILES/ripgrep/ripgreprc" "$HOME/.ripgreprc"
 
-if [ -f "$DOTFILES/atuin/config.toml" ]; then
-    link "$DOTFILES/atuin/config.toml" "$HOME/.config/atuin/config.toml"
-fi
+link "$DOTFILES/atuin/config.toml" "$HOME/.config/atuin/config.toml"
 
-if [ -f "$DOTFILES/starship/starship.toml" ]; then
-    link "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
-fi
+link "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
 
-if [ -f "$DOTFILES/claude/settings.json" ]; then
-    mkdir -p "$HOME/.claude"
-    link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
-fi
+mkdir -p "$HOME/.claude"
+link "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
 
 # ~/.claude/settings.json is a symlink into this repo, and Claude Code writes the current
 # model back into it every time you switch — which would leave the repo permanently dirty
@@ -82,6 +78,7 @@ fi
 if command -v jq >/dev/null 2>&1; then
     git -C "$DOTFILES" config filter.claude-settings.clean "jq --indent 2 'del(.model)'"
     git -C "$DOTFILES" config filter.claude-settings.smudge cat
+    git -C "$DOTFILES" config filter.claude-settings.required true
     echo "  ✓ Configured claude-settings filter (keeps 'model' out of git)"
 else
     echo "  ! jq not found — 'model' changes will show as repo modifications"
@@ -99,21 +96,19 @@ fi
 git -C "$DOTFILES" update-index --skip-worktree claude/settings.json 2>/dev/null \
     && echo "  ✓ settings.json marked skip-worktree (model switches stay out of git status)"
 
-if [ -f "$DOTFILES/vscode/settings.json" ]; then
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        VSCODE_DIR="$HOME/Library/Application Support/Code/User"
-    else
-        VSCODE_DIR="$HOME/.config/Code/User"
-    fi
-    link "$DOTFILES/vscode/settings.json" "$VSCODE_DIR/settings.json"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    VSCODE_DIR="$HOME/Library/Application Support/Code/User"
+else
+    VSCODE_DIR="$HOME/.config/Code/User"
 fi
+link "$DOTFILES/vscode/settings.json" "$VSCODE_DIR/settings.json"
 
-if [ -f "$DOTFILES/zed/settings.json" ]; then
-    link "$DOTFILES/zed/settings.json" "$HOME/.config/zed/settings.json"
-fi
-if [ -f "$DOTFILES/zed/keymap.json" ]; then
-    link "$DOTFILES/zed/keymap.json" "$HOME/.config/zed/keymap.json"
-fi
+link "$DOTFILES/zed/settings.json" "$HOME/.config/zed/settings.json"
+link "$DOTFILES/zed/keymap.json" "$HOME/.config/zed/keymap.json"
 
 echo ""
+if [ "$link_failures" -gt 0 ]; then
+    echo "Dotfiles installed with $link_failures problem(s) above."
+    exit 1
+fi
 echo "Dotfiles installed successfully!"

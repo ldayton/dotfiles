@@ -17,8 +17,7 @@
       "WebFetch",
       "WebSearch"
     ],
-    "defaultMode": "bypassPermissions",
-    "skipDangerousModePermissionPrompt": true
+    "defaultMode": "bypassPermissions"
   },
   "disabledMcpjsonServers": [
     "playwright"
@@ -27,5 +26,6 @@
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
   "theme": "dark",
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "skipDangerousModePermissionPrompt": true
 }
