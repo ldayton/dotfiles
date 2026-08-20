@@ -58,3 +58,7 @@ dev_user_overlay_links:
 dev_user_git_host: github.com
 dev_user_git_host_keys_url: https://api.github.com/meta
 dev_user_git_host_keys: []
+
+# Root-owned, so the prefix owner can read the staged Brewfile without the new home being
+# made traversable, and so no other local account can pre-place the path.
+brew_stage_dir: /var/lib/dev-user-role

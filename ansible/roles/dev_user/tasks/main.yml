@@ -39,10 +39,15 @@
   changed_when: brew_files.stdout | length > 0
   when: brew_share_mode == 'group'
 
-# Remediation for a prefix an earlier revision of this role already widened.
-- name: Strip setgid from any regular file in the prefix
+# Remediation for a prefix an earlier revision of this role already widened. Both bits are
+# required in the predicate: setgid alone is how a handful of formulae legitimately ship,
+# and stripping it off those would break them. Setgid *and* group-writable together is the
+# combination nothing installs on purpose, and the one that lets a local account enter the
+# group and then rewrite what it just entered. Left ungated so a prefix damaged under
+# 'group' is still repaired after switching back to 'readonly'.
+- name: Strip setgid from group-writable files in the prefix
   ansible.builtin.command:
-    cmd: find {{ brew_prefix }} -type f -perm -g+s -printf . -exec chmod g-s {} +
+    cmd: find {{ brew_prefix }} -type f -perm -g+s -perm -g+w -printf . -exec chmod g-s {} +
   become: true
   register: brew_setgid
   changed_when: brew_setgid.stdout | length > 0
@@ -97,9 +102,7 @@
 
 - name: Resolve which host keys to pin
   ansible.builtin.set_fact:
-    git_host_keys: >-
-      {{ dev_user_git_host_keys if dev_user_git_host_keys | length > 0
-         else (git_host_meta.json.ssh_keys | default([])) }}
+    git_host_keys: "{{ dev_user_git_host_keys or (git_host_meta.json.ssh_keys | default([])) }}"
 
 - name: Refuse to clone with no host key to verify against
   ansible.builtin.fail:
@@ -139,7 +142,7 @@
       Could not clone {{ dev_user_dotfiles_repo }} as {{ dev_user_name }}. Register the
       public key printed above with the git host, then re-run. To use a different account
       or a read-only URL, override dev_user_dotfiles_repo.
-  when: dotfiles_clone.failed | default(false)
+  when: "'Permission denied' in (dotfiles_clone.msg | default(''))"
 
 - name: Link the base dotfiles
   ansible.builtin.include_tasks: links.yml
@@ -177,21 +180,55 @@
   loop_control:
     label: "filter.claude-settings.{{ item.key }}"
 
+- name: Check whether settings.json is already skip-worktree
+  ansible.builtin.command:
+    cmd: git ls-files -v claude/settings.json
+    chdir: "{{ dev_user_dotfiles_dest }}"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  register: skip_worktree_state
+  changed_when: false
+
+# `git ls-files -v` prefixes a skip-worktree entry with S. Checking first is what keeps a
+# re-run from reporting changed forever over a flag that was already set.
 - name: Mark settings.json skip-worktree
   ansible.builtin.command:
     cmd: git update-index --skip-worktree claude/settings.json
     chdir: "{{ dev_user_dotfiles_dest }}"
   become: true
   become_user: "{{ dev_user_name }}"
-  register: skip_worktree
-  changed_when: skip_worktree.rc == 0
+  when: skip_worktree_state.stdout[:1] != 'S'
 
 # Packages live in the shared prefix, so they are installed once by whoever owns it rather
 # than per account. `bundle check` is what makes this idempotent -- `brew bundle` alone
 # always reports work done, and would mark the play changed on every run.
+# brew runs as whoever owns the prefix, and that account cannot read the Brewfile where it
+# lands: useradd honours HOME_MODE, which is 0750 on Ubuntu, so the new home is not
+# traversable by anyone else. Staging it into a root-owned directory keeps the read working
+# without widening the home, and without leaving the path somewhere another local account
+# could pre-create it as a symlink for root to follow.
+- name: Create a root-owned directory to stage the Brewfile in
+  ansible.builtin.file:
+    path: "{{ brew_stage_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Stage the Brewfile where the prefix owner can read it
+  ansible.builtin.copy:
+    src: "{{ dev_user_dotfiles_dest }}/Brewfile"
+    dest: "{{ brew_stage_dir }}/Brewfile"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+
 - name: Check whether the Brewfile is already satisfied
   ansible.builtin.command:
-    cmd: "{{ brew_prefix }}/bin/brew bundle check --file={{ dev_user_dotfiles_dest }}/Brewfile"
+    cmd: "{{ brew_prefix }}/bin/brew bundle check --file={{ brew_stage_dir }}/Brewfile"
   become: true
   become_user: "{{ brew_owner }}"
   register: brew_check
@@ -200,7 +237,7 @@
 
 - name: Install the Brewfile
   ansible.builtin.command:
-    cmd: "{{ brew_prefix }}/bin/brew bundle --file={{ dev_user_dotfiles_dest }}/Brewfile"
+    cmd: "{{ brew_prefix }}/bin/brew bundle --file={{ brew_stage_dir }}/Brewfile"
   become: true
   become_user: "{{ brew_owner }}"
   when: brew_check.rc != 0
