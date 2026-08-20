@@ -20,12 +20,12 @@
     "defaultMode": "bypassPermissions",
     "skipDangerousModePermissionPrompt": true
   },
-  "effortLevel": "high",
-  "tui": "fullscreen",
-  "theme": "dark",
   "disabledMcpjsonServers": [
     "playwright"
   ],
+  "effortLevel": "high",
+  "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
-  "skipAutoPermissionPrompt": true
+  "theme": "dark",
+  "agentPushNotifEnabled": true
 }
