@@ -1,7 +1,10 @@
 ---
 # Provisions a namespaced dev account on a box that belongs to other things too. Run it
-# from an account with sudo; it touches nothing outside the new home except the Homebrew
-# group, and only then when dev_user_brew_share_mode is 'group'.
+# from an account with sudo -- passwordless, because the Homebrew installer calls sudo itself
+# rather than inheriting this play's escalation. Outside the new home it touches the Homebrew
+# prefix (installing it when absent, as the invoking account, which then owns it), the
+# installer's apt prerequisites, and the Homebrew group when dev_user_brew_share_mode is
+# 'group'.
 #
 #   ansible-playbook -i inventory.ini site.yml --check     # dry run first
 #   ansible-playbook -i inventory.ini site.yml

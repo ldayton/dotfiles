@@ -4,21 +4,19 @@
 # this account can log into.
 #
 #   ansible-playbook -i inventory.ini site.yml -e @hosts/lily.yml
+#
+# Everything else this box needs is now the role's own default -- Homebrew, the Brewfile, the
+# zsh those two put in the prefix, Claude Code. This file used to switch three of them off and
+# downgrade the shell to /bin/bash, because the role could not install Homebrew and a cloud
+# image has none. It can now, so the overrides are gone rather than being carried as a preset
+# that quietly provisioned less than the role advertises.
 
 dev_user_authorized_keys:
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHEHSv9U28JSaick1k4nTgA5Fb4nDUM1RYqv/uIlxBZ+ lily.dayton@mac"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA3frltPWfDQwvR8Cb4CnsSjR605S/lSLTsI0IG2aG8D lily.dayton@wsl"
 
-# A cloud image has neither Homebrew nor zsh, and the role's default shell lives inside the
-# brew prefix -- so the shell guard refuses every box that has no prefix.
-dev_user_shell: /bin/bash
-dev_user_brewfile: false
-
-# The home lands on the root volume. A cloud box's separate filesystem, where it has one, is
-# the instance store its own workload already claimed.
-dev_user_home_require_separate_fs: false
-
-dev_user_claude_code: true
+# The private overlay stays off here: it is named in an untracked vars file, not in a preset
+# that lives in a public repo. See private.yml.example.
 dev_user_overlay_repo: ""
 
 # Root on a box that belongs to other things is a grant worth naming per host, and this preset
