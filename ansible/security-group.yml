@@ -6,7 +6,9 @@
 #   ansible-playbook security-group.yml \
 #     -e instance_arn=arn:aws:ec2:us-east-2:1234:instance/i-0abc -e allow_ips=1.2.3.4
 #
-# allow_ips takes one address or several comma-separated; each is authorized as a /32.
+# allow_ips takes one IPv4 address or several comma-separated; each is authorized as a /32.
+# IPv4 only, and checked: /32 is one host there and 2^96 of them in IPv6, so the same suffix
+# that makes this play narrow would make it the widest rule on the group.
 #
 # Runs from the operator's machine, not the target -- a box's own instance profile has no
 # business holding ec2:AuthorizeSecurityGroupIngress, and these do not.
@@ -52,6 +54,17 @@
           prefix, which would open more than one host.
       loop: "{{ allow_list }}"
       when: "'/' in item"
+
+    # An IPv6 address takes the /32 too, and the module normalizes what it is given to a network
+    # address -- so 2001:db8::1 arrives as 2001:db8::/32, which is not one host but 2^96. That it
+    # failed rather than landed was an IPv4 field rejecting an IPv6 value, not a check.
+    - name: Refuse anything that is not an IPv4 address
+      ansible.builtin.fail:
+        msg: >-
+          allow_ips takes IPv4 addresses and '{{ item }}' is not one. This play appends /32,
+          which is a single host in IPv4 and a /32 of IPv6 space anywhere else.
+      loop: "{{ allow_list }}"
+      when: item | ansible.utils.ipv4 != item
 
     - name: What the ARN names
       ansible.builtin.set_fact:

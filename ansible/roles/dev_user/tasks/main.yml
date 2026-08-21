@@ -137,13 +137,31 @@
       first, or set dev_user_shell to a shell that is present (/bin/bash on a stock Ubuntu).
   when: not (dev_user_shell_stat.stat.exists | default(false))
 
+# A group is granted where it exists. The user module fails on a name it cannot find, which
+# turns dev_user_groups into a list of things every target must already have -- docker on a box
+# with no daemon is a name, not access. Same treatment the brew prefix gets above.
+- name: Read the groups this box has
+  ansible.builtin.getent:
+    database: group
+
+- name: Which requested groups are actually here
+  ansible.builtin.set_fact:
+    dev_user_groups_present: "{{ dev_user_groups | select('in', ansible_facts.getent_group) | list }}"
+    dev_user_groups_absent: "{{ dev_user_groups | reject('in', ansible_facts.getent_group) | list }}"
+
+- name: Say which requested groups this box does not have
+  ansible.builtin.debug:
+    msg: >-
+      Not on this box, so not granted: {{ dev_user_groups_absent | join(', ') }}.
+  when: dev_user_groups_absent | length > 0
+
 - name: Create the account
   ansible.builtin.user:
     name: "{{ dev_user_name }}"
     comment: "{{ dev_user_comment }}"
     shell: "{{ dev_user_shell }}"
     home: "{{ dev_user_home }}"
-    groups: "{{ dev_user_groups + ([dev_user_brew_group] if dev_user_brew_share_mode == 'group' else []) }}"
+    groups: "{{ dev_user_groups_present + ([dev_user_brew_group] if dev_user_brew_share_mode == 'group' else []) }}"
     append: true
     create_home: true
     generate_ssh_key: true
