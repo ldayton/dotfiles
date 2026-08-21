@@ -182,8 +182,12 @@ jobs:
       # ownership actually gates. Under the previous group/readonly sharing this was the thing
       # that did not work: the account could run the binaries and could not add to them.
       - name: The account owns Homebrew and can install with it
+        # From /, not the workspace: a step runs in $GITHUB_WORKSPACE, which lives under the
+        # runner's own 0750 home, and brew refuses to start when it cannot stat its working
+        # directory -- which citest cannot, because it is not the runner.
         run: |
           owner="$(stat -c %U /home/linuxbrew/.linuxbrew)"
           [ "$owner" = "citest" ] || { echo "prefix owned by $owner, not citest"; exit 1; }
+          cd /
           sudo -u citest -H /home/linuxbrew/.linuxbrew/bin/brew install hello
           sudo -u citest -H /home/linuxbrew/.linuxbrew/bin/hello --version | head -1
