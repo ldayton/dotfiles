@@ -22,8 +22,8 @@
 
 # Skipping the home directory itself is the point of the `when`. The dirname of a dest like
 # .zshrc IS the home, and the file module enforces mode on a directory that already exists --
-# so without this the home goes 0755 on the first run. That would quietly undo useradd's 0750
-# and, with it, the reason the Brewfile is staged into a root-owned directory further down.
+# so without this the home goes 0755 on the first run, quietly undoing the 0750 that HOME_MODE
+# gives every user on this distribution.
 - name: "Ensure the link destinations have parents ({{ link_root | basename }})"
   ansible.builtin.file:
     path: "{{ (dev_user_home ~ '/' ~ item.dest) | dirname }}"

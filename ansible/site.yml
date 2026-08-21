@@ -1,10 +1,7 @@
 ---
-# Provisions a namespaced dev account on a box that belongs to other things too. Run it
-# from an account with sudo -- passwordless, because the Homebrew installer calls sudo itself
-# rather than inheriting this play's escalation. Outside the new home it touches the Homebrew
-# prefix (installing it when absent, as the invoking account, which then owns it), the
-# installer's apt prerequisites, and the Homebrew group when dev_user_brew_share_mode is
-# 'group'.
+# Provisions a dev account that is an ordinary user of the box: its own home, its own keys and
+# history, passwordless sudo, and ownership of the Homebrew prefix. Run it from an account with
+# passwordless sudo.
 #
 #   ansible-playbook -i inventory.ini site.yml --check     # dry run first
 #   ansible-playbook -i inventory.ini site.yml
@@ -12,6 +9,10 @@
 # The inventory ships empty, so name the target under [dev] first. `--check` cannot reach the clone:
 # `uri` has no check mode, so the host-key fetch is skipped and the guard refusing an unpinned clone
 # fires on an empty list rather than a real absence.
+#
+# Outside the new home the role touches the Homebrew prefix -- installing it when absent, or taking
+# ownership of one another account installed -- the installer's apt prerequisites, the login shell's
+# package, and a sudoers drop-in.
 #
 # become at play level makes root the default for tasks that name no become_user. It does NOT
 # make the other tasks hop root -> target: a task-level become_user replaces the play's, it does

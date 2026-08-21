@@ -116,6 +116,12 @@ jobs:
       # referenced three times and defined none. Every one of those passed --syntax-check and
       # ansible-lint. A runner is a disposable machine with sudo, which is what this role wants.
       #
+      # One blind spot worth naming, because it hid a real defect: the runner ships apt's jq on
+      # the default PATH, so this job cannot catch install.sh failing to find the jq that comes
+      # from the Brewfile. On a stock cloud image jq exists only inside the Homebrew prefix,
+      # which no login shell has put on PATH by the time the role runs the installer. That was
+      # found by running the role in a bare ubuntu:24.04 container, not here.
+      #
       # The clone is the checkout itself, not the published repo -- otherwise CI would provision
       # from main and pass on a pull request whose own install.sh is broken.
       #
@@ -141,12 +147,17 @@ jobs:
           cat > /tmp/ci-vars.yml <<YML
           dev_user_name: citest
           dev_user_comment: "CI test account"
-          dev_user_shell: /bin/bash
           dev_user_dotfiles_repo: file:///tmp/dotfiles-src
           dev_user_dotfiles_version: $(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)
-          # The runner ships Homebrew, so the brew gate passes and the role would install the whole
-          # Brewfile -- forty-odd formulae, minutes per run, and not what this job is checking. The
-          # shell job already parses the Brewfile; nothing here exercises installing it.
+          # The login shell is left at the role's default so this job exercises installing it.
+          # It used to be pinned to /bin/bash because the default lived in the Homebrew prefix
+          # and the role could not be trusted to have put it there; it is now the distribution's
+          # zsh, installed from the same package task as the rest of the prerequisites.
+          #
+          # The runner ships Homebrew already, which is exactly the case worth testing: the role
+          # has to take ownership of a prefix another account installed. Installing the whole
+          # Brewfile is still forty-odd formulae and minutes per run, so that stays off and the
+          # step below installs a single formula to prove the takeover worked.
           dev_user_brewfile: false
           # The home is the runner's root volume, which is the only one it has.
           dev_user_home_require_separate_fs: false
@@ -161,5 +172,18 @@ jobs:
           sudo test -L /home/citest/.zshrc || { echo ".zshrc is not a link"; exit 1; }
           sudo test -f /home/citest/.claude/settings.json || { echo "settings.json missing"; exit 1; }
           sudo test ! -L /home/citest/.claude/settings.json || { echo "settings.json should be generated, not linked"; exit 1; }
+          # HOME_MODE on Ubuntu, which the role neither sets nor works around.
           [ "$(stat -c %a /home/citest)" = "750" ] || { echo "home is $(stat -c %a /home/citest), not 750"; exit 1; }
+          [ "$(getent passwd citest | cut -d: -f7)" = "/usr/bin/zsh" ] || { echo "login shell is not zsh"; exit 1; }
           sudo -u citest -H /home/citest/.local/bin/claude --version
+
+      # The point of the whole change. The runner installed Homebrew as somebody else, so this
+      # passes only if the role took the prefix over -- and installing is the operation that
+      # ownership actually gates. Under the previous group/readonly sharing this was the thing
+      # that did not work: the account could run the binaries and could not add to them.
+      - name: The account owns Homebrew and can install with it
+        run: |
+          owner="$(stat -c %U /home/linuxbrew/.linuxbrew)"
+          [ "$owner" = "citest" ] || { echo "prefix owned by $owner, not citest"; exit 1; }
+          sudo -u citest -H /home/linuxbrew/.linuxbrew/bin/brew install hello
+          sudo -u citest -H /home/linuxbrew/.linuxbrew/bin/hello --version | head -1
