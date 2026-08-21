@@ -21,6 +21,8 @@ dev_user_home_require_separate_fs: false
 dev_user_claude_code: true
 dev_user_overlay_repo: ""
 
-# Root on a box that belongs to other things is a grant worth naming per host.
-# dev_user_sudo_nopasswd: true
-# dev_user_groups: [docker]
+# Root on a box that belongs to other things is a grant worth naming per host, and this preset
+# names it: these boxes are provisioned to be worked on, and the docker group is root-equivalent
+# anyway, so withholding sudo beside it buys nothing.
+dev_user_sudo_nopasswd: true
+dev_user_groups: [docker]
