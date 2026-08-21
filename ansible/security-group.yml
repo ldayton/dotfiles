@@ -1,0 +1,117 @@
+---
+# Opens ssh to an address on the security group a running instance already carries. Two inputs,
+# and everything else is read from them: the ARN carries the region and the instance id, and the
+# instance carries the group.
+#
+#   ansible-playbook security-group.yml \
+#     -e instance_arn=arn:aws:ec2:us-east-2:1234:instance/i-0abc -e allow_ips=1.2.3.4
+#
+# allow_ips takes one address or several comma-separated; each is authorized as a /32.
+#
+# Runs from the operator's machine, not the target -- a box's own instance profile has no
+# business holding ec2:AuthorizeSecurityGroupIngress, and these do not.
+#
+# A group created by a stack is owned by that stack, so a rule added here is drift its next
+# deploy reverts. Fine for reaching a box today, wrong as a way to keep it reachable.
+- name: Authorize ssh from an address
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    ssh_port: 22
+    arn_parts: "{{ instance_arn | default('') | split(':') }}"
+    # A list either way, so one address needs no special spelling at the call site.
+    allow_list: >-
+      {{ allow_ips if allow_ips | default('') is sequence and allow_ips is not string
+         else allow_ips | default('') | split(',') | map('trim') | reject('equalto', '') | list }}
+
+  tasks:
+    - name: Refuse a run that names no instance or address
+      ansible.builtin.fail:
+        msg: >-
+          Set instance_arn and allow_ips. Neither is inferred: a group opened in whatever region
+          the environment happened to name is not a mistake anything reports.
+      when: instance_arn | default('') | length == 0 or allow_list | length == 0
+
+    - name: Refuse anything that is not an EC2 instance ARN
+      ansible.builtin.fail:
+        msg: >-
+          '{{ instance_arn }}' is not an EC2 instance ARN. Expected
+          arn:aws:ec2:<region>:<account>:instance/<id>.
+      when: >-
+        arn_parts | length != 6
+        or arn_parts[0] != 'arn'
+        or arn_parts[2] != 'ec2'
+        or not arn_parts[5].startswith('instance/')
+
+    - name: Refuse an address that already carries a mask
+      ansible.builtin.fail:
+        msg: >-
+          allow_ips takes bare addresses; this play appends /32. '{{ item }}' carries its own
+          prefix, which would open more than one host.
+      loop: "{{ allow_list }}"
+      when: "'/' in item"
+
+    - name: What the ARN names
+      ansible.builtin.set_fact:
+        target_region: "{{ arn_parts[3] }}"
+        target_instance: "{{ arn_parts[5] | split('/') | last }}"
+
+    - name: Read the group off the instance
+      amazon.aws.ec2_instance_info:
+        region: "{{ target_region }}"
+        instance_ids: ["{{ target_instance }}"]
+      register: instance_info
+
+    - name: Refuse an instance that is not there, or carries no single group
+      ansible.builtin.fail:
+        msg: >-
+          {{ target_instance }} in {{ target_region }} returned
+          {{ instance_info.instances | length }} instances carrying {{ groups_on_box | length }}
+          security groups. This play authorizes on exactly one.
+      vars:
+        groups_on_box: "{{ (instance_info.instances[0].security_groups | default([])) if instance_info.instances | length == 1 else [] }}"
+      when: instance_info.instances | length != 1 or groups_on_box | length != 1
+
+    - name: Which group is being modified
+      ansible.builtin.set_fact:
+        target_group: "{{ instance_info.instances[0].security_groups[0].group_id }}"
+
+    # ec2_security_group is create-or-update, so state=present demands a name and a description
+    # even when handed a group_id. Both are read back off the group rather than written here:
+    # a literal would rename somebody else's group the first time it drifted.
+    - name: Read the group's own name and description
+      amazon.aws.ec2_security_group_info:
+        region: "{{ target_region }}"
+        filters:
+          group-id: "{{ target_group }}"
+      register: group_info
+
+    - name: Authorize each address as a /32
+      amazon.aws.ec2_security_group:
+        group_id: "{{ target_group }}"
+        name: "{{ group_info.security_groups[0].group_name }}"
+        description: "{{ group_info.security_groups[0].description }}"
+        vpc_id: "{{ group_info.security_groups[0].vpc_id }}"
+        region: "{{ target_region }}"
+        # The group belongs to something else. Purging is how this play would silently take
+        # ssh away from whoever else is on it.
+        purge_rules: false
+        purge_rules_egress: false
+        purge_tags: false
+        rules:
+          - proto: tcp
+            from_port: "{{ ssh_port }}"
+            to_port: "{{ ssh_port }}"
+            cidr_ip: "{{ allow_list | map('regex_replace', '^(.*)$', '\\1/32') | list }}"
+            rule_desc: "dev access, added by security-group.yml"
+      register: sg_result
+
+    - name: What port {{ ssh_port }} allows now
+      ansible.builtin.debug:
+        msg: >-
+          {{ target_group }} ({{ target_region }}):
+          {{ sg_result.ip_permissions | selectattr('from_port', 'defined')
+             | selectattr('from_port', 'equalto', ssh_port)
+             | map(attribute='ip_ranges') | flatten | map(attribute='cidr_ip') | list }}
