@@ -10,11 +10,83 @@
     state: present
   become: true
 
-# Homebrew first: the account's login shell lives inside the prefix, so it has to be
-# reachable before the user is created or the first login has no shell to land in.
-# The role does not install Homebrew; it only shares an existing prefix. Every brew task is
-# gated on the prefix actually being there, including the ungated remediation below -- a bare
-# find on a missing path exits 1, which would have killed the play on any host without it.
+# Homebrew first: the account's login shell lives inside the prefix, and so does every tool
+# the Brewfile installs, so the prefix has to be there before the user is created or the first
+# login has no shell to land in.
+#
+# The role installs it when it is missing. It used to only share a prefix somebody else had
+# already put there, and on a stock cloud image -- which has neither Homebrew nor zsh -- that
+# meant every brew task below skipped, the login shell had to be downgraded to /bin/bash, and
+# the account came up without gh, zellij or anything else this repo is about. Nothing said so:
+# a skipped task is a green tick. Every brew task is still gated on the prefix existing, for
+# the host that sets dev_user_brew_install false -- including the ungated remediation below,
+# where a bare find on a missing path exits 1 and would kill the play.
+- name: Is Homebrew already here?
+  ansible.builtin.stat:
+    path: "{{ dev_user_brew_prefix }}"
+  register: dev_user_brew_prefix_before
+
+# Asked of the target rather than read out of ansible_user_id, which is gathered under the
+# play's own become and therefore says root on every host. The answer decides who ends up
+# owning the prefix, so getting it from the wrong place is not a cosmetic error.
+# check_mode: false so it runs during --check too. A skipped command still registers, as an
+# object with no stdout, and the guard below reads that stdout inside a `when` -- so without
+# this a dry run dies on an undefined attribute instead of reporting what it would do.
+- name: Which account is this play connected as?
+  ansible.builtin.command: id -un
+  become: false
+  changed_when: false
+  check_mode: false
+  register: dev_user_connection_account
+
+# Homebrew refuses to run as uid 0 and escalates on its own where it needs to, so it wants an
+# unprivileged account that can sudo -- which is what this playbook already needs to become
+# root at all. Stated here because the installer's own refusal talks about interactive shells
+# and never mentions the connection, which is the thing to change.
+- name: Refuse to install Homebrew over a root connection
+  ansible.builtin.fail:
+    msg: >-
+      Homebrew will not install as root, and this play is connected as
+      {{ dev_user_connection_account.stdout | trim }}. Connect as an unprivileged account with
+      passwordless sudo, put Homebrew in {{ dev_user_brew_prefix }} by hand, or set
+      dev_user_brew_install to false and accept an account without the Brewfile.
+  when:
+    - dev_user_brew_install | bool
+    - not (dev_user_brew_prefix_before.stat.isdir | default(false))
+    - (dev_user_connection_account.stdout | trim) == 'root'
+
+# The installer's own prerequisites, installed before it rather than after it complains. A
+# cloud image carries curl and git but not reliably file, procps or a compiler, and the
+# installer reports that only once it has already cloned itself into place.
+- name: Packages the Homebrew installer needs
+  ansible.builtin.package:
+    name: [build-essential, curl, file, git, procps]
+    state: present
+  become: true
+  when:
+    - dev_user_brew_install | bool
+    - not (dev_user_brew_prefix_before.stat.isdir | default(false))
+    - ansible_facts['system'] == 'Linux'
+
+# become: false, against the play's root default. The installer refuses uid 0, and the account
+# it does run as is the one that ends up owning the prefix -- which is the account every brew
+# task below becomes, and the one that must already hold passwordless sudo, because the
+# installer calls sudo itself rather than inheriting this play's escalation.
+- name: Install Homebrew
+  ansible.builtin.shell: |
+    set -o pipefail
+    NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  args:
+    executable: /bin/bash
+    creates: "{{ dev_user_brew_prefix }}/bin/brew"
+  become: false
+  when:
+    - dev_user_brew_install | bool
+    - not (dev_user_brew_prefix_before.stat.isdir | default(false))
+
+# Re-stat, and unconditionally: a skipped task overwrites its register with the skip, so a
+# `when` here would erase the very fact it exists to refresh. Everything downstream reads this
+# one, so it has to describe the prefix as it is after the install, not before it.
 - name: Check whether the Homebrew prefix exists
   ansible.builtin.stat:
     path: "{{ dev_user_brew_prefix }}"
@@ -25,6 +97,17 @@
     dev_user_brew_runner: >-
       {{ dev_user_brew_owner if dev_user_brew_owner | length > 0
          else (dev_user_brew_prefix_stat.stat.pw_name | default('root')) }}
+
+# Stated rather than assumed, the same way Claude Code is further down: an installer exiting 0
+# is not the same as a brew that runs, and on a first install this is also the first time the
+# play becomes the account that owns the prefix.
+- name: Homebrew answers
+  ansible.builtin.command: "{{ dev_user_brew_prefix }}/bin/brew --version"
+  become: true
+  become_user: "{{ dev_user_brew_runner }}"
+  register: dev_user_brew_version
+  changed_when: false
+  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
 
 - name: Ensure the shared brew group exists
   ansible.builtin.group:
@@ -122,9 +205,25 @@
     - dev_user_home_require_separate_fs | bool
     - (dev_user_home_fs.stdout_lines[0] | trim) == (dev_user_home_fs.stdout_lines[1] | trim)
 
+# The default login shell is brew's zsh, and the Brewfile that would install it is staged out
+# of the dotfiles clone -- which lives in a home that does not exist yet. So the shell is
+# installed here, on its own, rather than waiting for the bundle: it is the one formula the
+# account cannot be created without. Named from dev_user_shell rather than hardcoded, so a
+# host that points the shell at some other formula in the prefix gets that one installed.
+- name: Install the login shell, when it lives in the Homebrew prefix
+  ansible.builtin.command:
+    cmd: "{{ dev_user_brew_prefix }}/bin/brew install {{ dev_user_shell | basename }}"
+    creates: "{{ dev_user_shell }}"
+  become: true
+  become_user: "{{ dev_user_brew_runner }}"
+  when:
+    - dev_user_brew_prefix_stat.stat.isdir | default(false)
+    - dev_user_shell.startswith(dev_user_brew_prefix ~ '/')
+
 # useradd does not check that the shell exists, so a missing one produces an account nobody
-# can log into while every task still reports ok. The default shell lives inside the Homebrew
-# prefix, which this role does not install.
+# can log into while every task still reports ok. The check stays even now that the task above
+# installs it: dev_user_brew_install can be off, the prefix can be absent, and a host is free
+# to name a shell that lives nowhere near Homebrew.
 - name: Check that the login shell exists on the target
   ansible.builtin.stat:
     path: "{{ dev_user_shell }}"
@@ -135,6 +234,8 @@
     msg: >-
       dev_user_shell is {{ dev_user_shell }}, which does not exist on this host. Install it
       first, or set dev_user_shell to a shell that is present (/bin/bash on a stock Ubuntu).
+      A shell inside {{ dev_user_brew_prefix }} means Homebrew is not there either -- leave
+      dev_user_brew_install true and the role will put both in place.
   when: not (dev_user_shell_stat.stat.exists | default(false))
 
 # A group is granted where it exists. The user module fails on a name it cannot find, which

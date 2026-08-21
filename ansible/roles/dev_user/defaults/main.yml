@@ -13,17 +13,21 @@ dev_user_groups: []
 dev_user_sudo_nopasswd: false
 
 # ubuntu logs in on brew's zsh rather than /usr/bin/zsh, so the same choice here keeps the
-# two accounts on one shell. It does mean login depends on dev_user_brew_prefix being readable.
+# two accounts on one shell. It does mean login depends on dev_user_brew_prefix being readable
+# -- the role installs the prefix and this one formula before it creates the account, so the
+# default holds on a stock image rather than having to be downgraded per host.
 dev_user_shell: "{{ dev_user_brew_prefix }}/bin/zsh"
 
 # Point this at a larger volume when the root one is small. An instance store is wiped on stop/start,
 # so a home on one is disposable by construction — keys, tokens and history included.
 #
-# The requirement below is why it is on: `nofail` turns a volume that did not come up into an
-# ordinary directory, and the home lands on the root filesystem with nothing to say so. Set it false
-# where the root volume is genuinely the intended home.
+# The check below is off by default because the default home is /home/<name> on the root volume,
+# and demanding a separate filesystem for it failed every ordinary box before it had done anything.
+# Turn it on with a dev_user_home you meant to put elsewhere, and it earns its keep: `nofail` turns
+# a volume that did not come up into an ordinary directory, so without the check the home lands on
+# the root filesystem with nothing at all to say so.
 dev_user_home: "/home/{{ dev_user_name }}"
-dev_user_home_require_separate_fs: true
+dev_user_home_require_separate_fs: false
 # HTTPS, not SSH: this repository is public, and SSH authenticates whether or not the other end is,
 # so an SSH URL made provisioning wait on somebody registering a freshly generated key. Override
 # with an SSH URL for a private fork; the host-key pinning below covers it.
@@ -40,6 +44,14 @@ dev_user_authorized_keys: []
 
 dev_user_brew_prefix: /home/linuxbrew/.linuxbrew
 dev_user_brew_group: brew
+
+# Install Homebrew when the prefix is not there. On by default: the login shell and every tool
+# the Brewfile carries live inside the prefix, so a role that only ever shared an existing one
+# produced a working account with none of them on a machine that had never had brew -- which is
+# every fresh cloud image. Set it false to go back to sharing only what is already installed;
+# the brew tasks then skip as they did before, and dev_user_shell has to name a shell that
+# exists outside the prefix.
+dev_user_brew_install: true
 
 # Homebrew is 3.6G and officially single-owner. Rather than pay that twice:
 #   group    -- a shared group owns the prefix and both accounts may install. Convenient,
@@ -76,19 +88,21 @@ dev_user_git_host_keys: []
 # made traversable, and so no other local account can pre-place the path.
 dev_user_brew_stage_dir: /var/lib/dev-user-role
 
-# Off by default: provisioning an account and populating a machine are different errands, and
-# forty-odd formulae is minutes of side effect. Ask for it: `-e dev_user_brewfile=true`.
-dev_user_brewfile: false
+# On by default. Provisioning an account and populating a machine were treated as different
+# errands, and the result was an account that had gh in its PATH via a wrapper, a gh.account
+# convention in its gitconfig and no gh -- the tools this repo configures are the point of it.
+# Forty-odd formulae is still minutes of side effect, so `-e dev_user_brewfile=false` for a run
+# that should only make the account.
+dev_user_brewfile: true
 
-# Claude Code, installed into the account's own home by Anthropic's native installer. Off for the
-# reason the Brewfile is. Set the
-# channel to "stable" for the roughly week-old release, or to an exact version to pin one; empty
-# means the default channel. A native install updates itself in the background, which is right for
-# something used interactively and wrong for anything that has to be reproducible -- pin it if this
-# account is ever something a build depends on.
+# Claude Code, installed into the account's own home by Anthropic's native installer. On for the
+# reason the Brewfile is. Set the channel to "stable" for the roughly week-old release, or to an
+# exact version to pin one; empty means the default channel. A native install updates itself in
+# the background, which is right for something used interactively and wrong for anything that has
+# to be reproducible -- pin it if this account is ever something a build depends on.
 #
 # apt is the alternative: Anthropic publish a signed repository, which trades the self-update for a
 # GPG-verified package and a system-wide install. The native installer is what this uses because it
 # keeps the tool inside the home, like everything else this role puts there.
-dev_user_claude_code: false
+dev_user_claude_code: true
 dev_user_claude_code_channel: ""
