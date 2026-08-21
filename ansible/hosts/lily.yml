@@ -1,0 +1,28 @@
+---
+# Defaults for provisioning a cloud dev box as lily. Passed explicitly, never made role
+# defaults: a fork of this public repo that inherited the key below would provision boxes
+# this account can log into.
+#
+#   ansible-playbook -i inventory.ini site.yml -e @hosts/lily.yml
+
+dev_user_authorized_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHEHSv9U28JSaick1k4nTgA5Fb4nDUM1RYqv/uIlxBZ+ lily.dayton@mac"
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA3frltPWfDQwvR8Cb4CnsSjR605S/lSLTsI0IG2aG8D lily.dayton@wsl"
+
+# A cloud image has neither Homebrew nor zsh, and the role's default shell lives inside the
+# brew prefix -- so the shell guard refuses every box that has no prefix.
+dev_user_shell: /bin/bash
+dev_user_brewfile: false
+
+# The home lands on the root volume. A cloud box's separate filesystem, where it has one, is
+# the instance store its own workload already claimed.
+dev_user_home_require_separate_fs: false
+
+dev_user_claude_code: true
+dev_user_overlay_repo: ""
+
+# Root on a box that belongs to other things is a grant worth naming per host, and this preset
+# names it: these boxes are provisioned to be worked on, and the docker group is root-equivalent
+# anyway, so withholding sudo beside it buys nothing.
+dev_user_sudo_nopasswd: true
+dev_user_groups: [docker]
