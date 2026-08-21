@@ -1,22 +1,28 @@
 ---
-# The account this role provisions. Everything carrying identity -- ssh keys, gh tokens,
-# ~/.claude, shell and atuin history -- lands inside its home and is shared with nobody.
+# The account this role provisions: an ordinary user of the box, not a tenant on it. Everything
+# carrying identity -- ssh keys, gh tokens, ~/.claude, shell and atuin history -- lands inside
+# its home and is shared with nobody, but the box itself is hers: she owns the Homebrew prefix,
+# installs her own packages, and reaches root without re-authenticating.
 dev_user_name: lily
 dev_user_comment: "Lily Dayton"
-# Sudo on a box that belongs to other things is a grant worth naming per host.
+# Supplementary groups, granted where the box has them. A name the box does not know is
+# reported and skipped rather than failing the run.
 dev_user_groups: []
 
-# Passwordless sudo, written as a drop-in rather than group membership: the grant is then one
-# file to read and one file to delete, and visudo checks it before it lands. Off for the same
-# reason the groups above are empty -- an account that reaches root without re-authenticating is
-# a decision per host. Setting it false removes a grant an earlier run left behind.
-dev_user_sudo_nopasswd: false
+# Passwordless sudo is not optional and has no flag. The account is created with a locked
+# password, so password sudo could never succeed -- the choice was never "which kind of sudo",
+# it was "sudo or none". The Homebrew installer also probes `sudo -n` before it will touch
+# /home, so the grant has to exist before the prefix does. It is written as a drop-in rather
+# than group membership: one file to read, one file to delete, and visudo checks it first.
+dev_user_sudoers_file: "/etc/sudoers.d/60-{{ dev_user_name }}"
 
-# ubuntu logs in on brew's zsh rather than /usr/bin/zsh, so the same choice here keeps the
-# two accounts on one shell. It does mean login depends on dev_user_brew_prefix being readable
-# -- the role installs the prefix and this one formula before it creates the account, so the
-# default holds on a stock image rather than having to be downgraded per host.
-dev_user_shell: "{{ dev_user_brew_prefix }}/bin/zsh"
+# The distribution's zsh, not Homebrew's. They are the same release -- 5.9 -- so the only thing
+# the Homebrew one ever bought was matching the cloud image's own account, which stopped being
+# a consideration when this account became the one you log into. Naming a shell outside the
+# prefix is what lets the account be created before Homebrew exists, which in turn is what lets
+# the account install Homebrew itself. The Brewfile still installs zsh; it just isn't this.
+dev_user_shell: /usr/bin/zsh
+dev_user_shell_package: zsh
 
 # Point this at a larger volume when the root one is small. An instance store is wiped on stop/start,
 # so a home on one is disposable by construction — keys, tokens and history included.
@@ -43,29 +49,26 @@ dev_user_dotfiles_dest: "{{ dev_user_home }}/source/dotfiles"
 dev_user_authorized_keys: []
 
 dev_user_brew_prefix: /home/linuxbrew/.linuxbrew
-dev_user_brew_group: brew
 
-# Install Homebrew when the prefix is not there. On by default: the login shell and every tool
-# the Brewfile carries live inside the prefix, so a role that only ever shared an existing one
-# produced a working account with none of them on a machine that had never had brew -- which is
-# every fresh cloud image. Set it false to go back to sharing only what is already installed;
-# the brew tasks then skip as they did before, and dev_user_shell has to name a shell that
-# exists outside the prefix.
+# Install Homebrew when the prefix is not there. On by default: every tool the Brewfile carries
+# lives inside the prefix, so a role that only ever shared an existing one produced an account
+# with none of them on a machine that had never had brew -- which is every fresh cloud image.
+# Set it false to provision an account with no Homebrew at all; the brew tasks then skip.
 dev_user_brew_install: true
 
-# Homebrew is 3.6G and officially single-owner. Rather than pay that twice:
-#   group    -- a shared group owns the prefix and both accounts may install. Convenient,
-#               and the cost is occasional permission repair after a brew upgrade.
-#   readonly -- the prefix is left alone. Binaries run fine for everyone; installs happen
-#               as whoever owns it (`sudo -u ubuntu brew install ...`). Nothing to break.
-dev_user_brew_share_mode: readonly
-
-# Whoever owns the prefix runs brew. Empty means ask the filesystem, which is the only answer
-# that is true everywhere: the prefix's owner IS the account that installed it. A literal here was
-# the cloud image's account name, and it was wrong on the first machine that was not that image --
-# the run then tried to become a user who did not exist and failed on a temp-file permission it
-# could not set.
-dev_user_brew_owner: ""
+# Homebrew is officially single-owner, and this role takes it at its word: the account owns the
+# prefix and runs brew as itself. A prefix somebody else installed is chowned over on the first
+# run -- seconds, and it copies nothing, because ownership is not disk.
+#
+# The cost is real and worth stating: whoever owned it before can still run every binary in the
+# prefix, but can no longer `brew install`. On a box where another account needs to install its
+# own packages, this is the wrong role.
+#
+# The alternative, sharing the prefix through a group, is what this replaced. It needed setgid on
+# directories, group-write across the tree, and a repair pass for the combination of the two --
+# and since group-write reaches the login shell of an account holding sudo, membership was
+# equivalent to root anyway. Single ownership is both simpler and the supported configuration.
+dev_user_brew_take_ownership: true
 
 # Private overlay, off by default -- this repo stays portable and employer-agnostic. Set
 # dev_user_overlay_repo in an untracked vars file (see private.yml.example) to enable.
@@ -83,10 +86,6 @@ dev_user_overlay_links:
 dev_user_git_host: github.com
 dev_user_git_host_keys_url: https://api.github.com/meta
 dev_user_git_host_keys: []
-
-# Root-owned, so the prefix owner can read the staged Brewfile without the new home being
-# made traversable, and so no other local account can pre-place the path.
-dev_user_brew_stage_dir: /var/lib/dev-user-role
 
 # On by default. Provisioning an account and populating a machine were treated as different
 # errands, and the result was an account that had gh in its PATH via a wrapper, a gh.account

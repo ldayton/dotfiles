@@ -1,7 +1,15 @@
 ---
-# acl first. Every task below that becomes the provisioned account escalates from the invoking
-# user, not from root -- a task-level become_user replaces the play's rather than chaining --
-# and Ansible can only pass a module payload between two unprivileged accounts via setfacl.
+# The order below is the whole design. The account is created first, out of packages the
+# distribution already has, and then does the rest of the work itself: it installs Homebrew,
+# owns the prefix, installs its own packages and configures its own home. Nothing here runs as
+# a second account on the account's behalf, so nothing here has to share anything with one.
+#
+# What that buys, concretely: no prefix ownership to negotiate, no group to widen, no staging
+# directory to hand a file between two users who cannot read each other's homes.
+
+# acl first. Tasks below that become the provisioned account escalate from the invoking user,
+# not from root -- a task-level become_user replaces the play's rather than chaining -- and
+# Ansible can only pass a module payload between two unprivileged accounts via setfacl.
 # Without this the run stops at the first such task with a permissions error about temporary
 # files. This task itself becomes root, which needs no acl.
 - name: Ensure acl is present, so module payloads can reach an unprivileged account
@@ -10,169 +18,17 @@
     state: present
   become: true
 
-# Homebrew first: the account's login shell lives inside the prefix, and so does every tool
-# the Brewfile installs, so the prefix has to be there before the user is created or the first
-# login has no shell to land in.
-#
-# The role installs it when it is missing. It used to only share a prefix somebody else had
-# already put there, and on a stock cloud image -- which has neither Homebrew nor zsh -- that
-# meant every brew task below skipped, the login shell had to be downgraded to /bin/bash, and
-# the account came up without gh, zellij or anything else this repo is about. Nothing said so:
-# a skipped task is a green tick. Every brew task is still gated on the prefix existing, for
-# the host that sets dev_user_brew_install false -- including the ungated remediation below,
-# where a bare find on a missing path exits 1 and would kill the play.
-- name: Is Homebrew already here?
-  ansible.builtin.stat:
-    path: "{{ dev_user_brew_prefix }}"
-  register: dev_user_brew_prefix_before
-
-# Asked of the target rather than read out of ansible_user_id, which is gathered under the
-# play's own become and therefore says root on every host. The answer decides who ends up
-# owning the prefix, so getting it from the wrong place is not a cosmetic error.
-# check_mode: false so it runs during --check too. A skipped command still registers, as an
-# object with no stdout, and the guard below reads that stdout inside a `when` -- so without
-# this a dry run dies on an undefined attribute instead of reporting what it would do.
-- name: Which account is this play connected as?
-  ansible.builtin.command: id -un
-  become: false
-  changed_when: false
-  check_mode: false
-  register: dev_user_connection_account
-
-# Homebrew refuses to run as uid 0 and escalates on its own where it needs to, so it wants an
-# unprivileged account that can sudo -- which is what this playbook already needs to become
-# root at all. Stated here because the installer's own refusal talks about interactive shells
-# and never mentions the connection, which is the thing to change.
-- name: Refuse to install Homebrew over a root connection
-  ansible.builtin.fail:
-    msg: >-
-      Homebrew will not install as root, and this play is connected as
-      {{ dev_user_connection_account.stdout | trim }}. Connect as an unprivileged account with
-      passwordless sudo, put Homebrew in {{ dev_user_brew_prefix }} by hand, or set
-      dev_user_brew_install to false and accept an account without the Brewfile.
-  when:
-    - dev_user_brew_install | bool
-    - not (dev_user_brew_prefix_before.stat.isdir | default(false))
-    - (dev_user_connection_account.stdout | trim) == 'root'
-
-# The installer's own prerequisites, installed before it rather than after it complains. A
-# cloud image carries curl and git but not reliably file, procps or a compiler, and the
-# installer reports that only once it has already cloned itself into place.
-- name: Packages the Homebrew installer needs
+# The login shell and the Homebrew installer's prerequisites, from the distribution, before the
+# account exists. The shell is the point: naming one the distribution ships is what lets the
+# account be created before Homebrew, which is what lets the account install Homebrew itself.
+# A cloud image carries curl and git but not reliably file, procps, a compiler or zsh, and the
+# Homebrew installer reports the missing ones only after cloning itself into place.
+- name: Packages the shell and the Homebrew installer need
   ansible.builtin.package:
-    name: [build-essential, curl, file, git, procps]
+    name: "{{ ['build-essential', 'curl', 'file', 'git', 'procps'] + [dev_user_shell_package] }}"
     state: present
   become: true
-  when:
-    - dev_user_brew_install | bool
-    - not (dev_user_brew_prefix_before.stat.isdir | default(false))
-    - ansible_facts['system'] == 'Linux'
-
-# become: false, against the play's root default. The installer refuses uid 0, and the account
-# it does run as is the one that ends up owning the prefix -- which is the account every brew
-# task below becomes, and the one that must already hold passwordless sudo, because the
-# installer calls sudo itself rather than inheriting this play's escalation.
-- name: Install Homebrew
-  ansible.builtin.shell: |
-    set -o pipefail
-    NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  args:
-    executable: /bin/bash
-    creates: "{{ dev_user_brew_prefix }}/bin/brew"
-  become: false
-  when:
-    - dev_user_brew_install | bool
-    - not (dev_user_brew_prefix_before.stat.isdir | default(false))
-
-# Re-stat, and unconditionally: a skipped task overwrites its register with the skip, so a
-# `when` here would erase the very fact it exists to refresh. Everything downstream reads this
-# one, so it has to describe the prefix as it is after the install, not before it.
-- name: Check whether the Homebrew prefix exists
-  ansible.builtin.stat:
-    path: "{{ dev_user_brew_prefix }}"
-  register: dev_user_brew_prefix_stat
-
-- name: Whoever owns the prefix is who runs brew
-  ansible.builtin.set_fact:
-    dev_user_brew_runner: >-
-      {{ dev_user_brew_owner if dev_user_brew_owner | length > 0
-         else (dev_user_brew_prefix_stat.stat.pw_name | default('root')) }}
-
-# Stated rather than assumed, the same way Claude Code is further down: an installer exiting 0
-# is not the same as a brew that runs, and on a first install this is also the first time the
-# play becomes the account that owns the prefix.
-- name: Homebrew answers
-  ansible.builtin.command: "{{ dev_user_brew_prefix }}/bin/brew --version"
-  become: true
-  become_user: "{{ dev_user_brew_runner }}"
-  register: dev_user_brew_version
-  changed_when: false
-  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
-
-- name: Ensure the shared brew group exists
-  ansible.builtin.group:
-    name: "{{ dev_user_brew_group }}"
-    state: present
-  become: true
-  when:
-    - dev_user_brew_share_mode == 'group'
-    - dev_user_brew_prefix_stat.stat.isdir | default(false)
-
-- name: Give the brew group ownership of the prefix
-  ansible.builtin.file:
-    path: "{{ dev_user_brew_prefix }}"
-    group: "{{ dev_user_brew_group }}"
-    recurse: true
-  become: true
-  when:
-    - dev_user_brew_share_mode == 'group'
-    - dev_user_brew_prefix_stat.stat.isdir | default(false)
-
-# Mode is set with find rather than the file module's recurse, because setgid belongs on
-# directories and nowhere else. The module's symbolic modes have no "directories only"
-# form: g+rwXs limits the execute bit to directories via X, but applies s to every regular
-# file too. That turns each of the prefix's binaries into a setgid executable while g+w
-# leaves them group-writable, so any local account on the machine can enter the group
-# through any one of them and then rewrite the rest, including the login shell of whoever
-# holds sudo.
-- name: Setgid and group-write on directories, so new packages inherit the group
-  ansible.builtin.command:
-    cmd: find {{ dev_user_brew_prefix }} -type d ! -perm -g+ws -printf . -exec chmod g+rwxs {} +
-  become: true
-  register: dev_user_brew_dirs
-  changed_when: dev_user_brew_dirs.stdout | length > 0
-  when:
-    - dev_user_brew_share_mode == 'group'
-    - dev_user_brew_prefix_stat.stat.isdir | default(false)
-
-# Group-write reaches every binary in the prefix, the login shell among them, and this role
-# puts the account it provisions in sudo. Any other member of the brew group therefore gets a
-# path to root by rewriting a binary a sudoer runs. Setgid is not needed for that -- membership
-# is enough -- so treat the group as equivalent to sudo on this host, and keep it to accounts
-# that already have it. That is why readonly is the default.
-- name: Group-write on files, without setgid
-  ansible.builtin.command:
-    cmd: find {{ dev_user_brew_prefix }} -type f ! -perm -g+w -printf . -exec chmod g+w {} +
-  become: true
-  register: dev_user_brew_files
-  changed_when: dev_user_brew_files.stdout | length > 0
-  when:
-    - dev_user_brew_share_mode == 'group'
-    - dev_user_brew_prefix_stat.stat.isdir | default(false)
-
-# Remediation for a prefix an earlier revision of this role already widened. Both bits are
-# required in the predicate: setgid alone is how a handful of formulae legitimately ship,
-# and stripping it off those would break them. Setgid *and* group-writable together is the
-# combination nothing installs on purpose, and the one that lets a local account enter the
-# group and then rewrite what it just entered. Left ungated so a prefix damaged under
-# 'group' is still repaired after switching back to 'readonly'.
-- name: Strip setgid from group-writable files in the prefix
-  ansible.builtin.command:
-    cmd: find {{ dev_user_brew_prefix }} -type f -perm -g+s -perm -g+w -printf . -exec chmod g-s {} +
-  become: true
-  register: dev_user_brew_setgid
-  changed_when: dev_user_brew_setgid.stdout | length > 0
-  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
+  when: ansible_facts['system'] == 'Linux'
 
 # A home meant to live on another volume, on a filesystem that turns out to be the root one,
 # means the volume did not mount -- `nofail` lets that happen quietly at boot. Checked before
@@ -205,25 +61,9 @@
     - dev_user_home_require_separate_fs | bool
     - (dev_user_home_fs.stdout_lines[0] | trim) == (dev_user_home_fs.stdout_lines[1] | trim)
 
-# The default login shell is brew's zsh, and the Brewfile that would install it is staged out
-# of the dotfiles clone -- which lives in a home that does not exist yet. So the shell is
-# installed here, on its own, rather than waiting for the bundle: it is the one formula the
-# account cannot be created without. Named from dev_user_shell rather than hardcoded, so a
-# host that points the shell at some other formula in the prefix gets that one installed.
-- name: Install the login shell, when it lives in the Homebrew prefix
-  ansible.builtin.command:
-    cmd: "{{ dev_user_brew_prefix }}/bin/brew install {{ dev_user_shell | basename }}"
-    creates: "{{ dev_user_shell }}"
-  become: true
-  become_user: "{{ dev_user_brew_runner }}"
-  when:
-    - dev_user_brew_prefix_stat.stat.isdir | default(false)
-    - dev_user_shell.startswith(dev_user_brew_prefix ~ '/')
-
-# useradd does not check that the shell exists, so a missing one produces an account nobody
-# can log into while every task still reports ok. The check stays even now that the task above
-# installs it: dev_user_brew_install can be off, the prefix can be absent, and a host is free
-# to name a shell that lives nowhere near Homebrew.
+# useradd does not check that the shell exists, so a missing one produces an account nobody can
+# log into while every task still reports ok. The default is installed by the package task
+# above; this covers a host that names a shell nothing here installs.
 - name: Check that the login shell exists on the target
   ansible.builtin.stat:
     path: "{{ dev_user_shell }}"
@@ -232,15 +72,14 @@
 - name: Refuse to create an account with a shell that is not there
   ansible.builtin.fail:
     msg: >-
-      dev_user_shell is {{ dev_user_shell }}, which does not exist on this host. Install it
-      first, or set dev_user_shell to a shell that is present (/bin/bash on a stock Ubuntu).
-      A shell inside {{ dev_user_brew_prefix }} means Homebrew is not there either -- leave
-      dev_user_brew_install true and the role will put both in place.
+      dev_user_shell is {{ dev_user_shell }}, which does not exist on this host. Either set
+      dev_user_shell_package to the package providing it, or name a shell that is already
+      present (/bin/bash on a stock Ubuntu).
   when: not (dev_user_shell_stat.stat.exists | default(false))
 
 # A group is granted where it exists. The user module fails on a name it cannot find, which
 # turns dev_user_groups into a list of things every target must already have -- docker on a box
-# with no daemon is a name, not access. Same treatment the brew prefix gets above.
+# with no daemon is a name, not access.
 - name: Read the groups this box has
   ansible.builtin.getent:
     database: group
@@ -256,13 +95,16 @@
       Not on this box, so not granted: {{ dev_user_groups_absent | join(', ') }}.
   when: dev_user_groups_absent | length > 0
 
+# HOME_MODE is 0750 on Ubuntu, so the home is not traversable by other accounts. That is the
+# distribution's default for every user, not something this role arranges, and nothing below
+# depends on widening it: the only account that reads anything in here is this one.
 - name: Create the account
   ansible.builtin.user:
     name: "{{ dev_user_name }}"
     comment: "{{ dev_user_comment }}"
     shell: "{{ dev_user_shell }}"
     home: "{{ dev_user_home }}"
-    groups: "{{ dev_user_groups_present + ([dev_user_brew_group] if dev_user_brew_share_mode == 'group' else []) }}"
+    groups: "{{ dev_user_groups_present }}"
     append: true
     create_home: true
     generate_ssh_key: true
@@ -280,32 +122,97 @@
   become: true
   loop: "{{ dev_user_authorized_keys }}"
 
+# Before Homebrew, not after: the installer probes `sudo -n` before it will create anything
+# under /home, so without this grant already in place it aborts on a fresh box. The account is
+# created with a locked password, so this is the only kind of sudo it could ever have.
 - name: Grant passwordless sudo
   ansible.builtin.copy:
     content: "{{ dev_user_name }} ALL=(ALL) NOPASSWD:ALL\n"
-    dest: "/etc/sudoers.d/60-{{ dev_user_name }}"
+    dest: "{{ dev_user_sudoers_file }}"
     owner: root
     group: root
     mode: "0440"
     validate: visudo -cf %s
   become: true
-  when: dev_user_sudo_nopasswd | bool
 
-- name: Withdraw a sudo grant that is no longer asked for
-  ansible.builtin.file:
-    path: "/etc/sudoers.d/60-{{ dev_user_name }}"
-    state: absent
-  become: true
-  when: not (dev_user_sudo_nopasswd | bool)
-
-# The account's own key, which is what the dotfiles clone below authenticates with. It has
-# to be registered on the git host by hand -- that step is a human's, so surface it rather
-# than failing four tasks later with a bare Permission denied.
+# The account's own key, which the dotfiles clone authenticates with when the repo is private.
+# It has to be registered on the git host by hand -- that step is a human's, so surface it
+# rather than failing four tasks later with a bare Permission denied.
 - name: Show the account's public key
   ansible.builtin.debug:
     msg:
       - "Add this to the git host before the clone step can succeed:"
       - "{{ dev_user_created.ssh_public_key | default('(key already existed; cat ' + dev_user_home + '/.ssh/id_ed25519.pub)') }}"
+
+- name: Is Homebrew already here, and whose is it?
+  ansible.builtin.stat:
+    path: "{{ dev_user_brew_prefix }}"
+  register: dev_user_brew_prefix_before
+
+- name: Refuse a Homebrew prefix this account is not allowed to take over
+  ansible.builtin.fail:
+    msg: >-
+      {{ dev_user_brew_prefix }} belongs to
+      {{ dev_user_brew_prefix_before.stat.pw_name | default('another account') }}, and
+      dev_user_brew_take_ownership is false. Homebrew is single-owner: {{ dev_user_name }} cannot
+      install into a prefix somebody else owns. Either set dev_user_brew_take_ownership, chown the
+      prefix by hand, or point dev_user_brew_prefix somewhere this account can own.
+  when:
+    - dev_user_brew_prefix_before.stat.isdir | default(false)
+    - (dev_user_brew_prefix_before.stat.pw_name | default('')) != dev_user_name
+    - not (dev_user_brew_take_ownership | bool)
+
+# Ownership is metadata, so this copies nothing and costs seconds even on a full prefix -- the
+# reason the old group-sharing arrangement existed was the 3.6G on disk, and a chown duplicates
+# none of it. Gated on the top-level owner, which is the sentinel the installer itself sets last;
+# when it fires it repairs the whole tree regardless of how mixed the ownership underneath is.
+- name: Take ownership of a Homebrew prefix somebody else installed
+  ansible.builtin.command:
+    # Quoted, and the trailing colon is load-bearing: `chown user:` sets the group to that
+    # user's login group, which is what the Homebrew installer itself does.
+    cmd: "chown -R {{ dev_user_name }}: {{ dev_user_brew_prefix }}"
+  become: true
+  changed_when: true
+  when:
+    - dev_user_brew_prefix_before.stat.isdir | default(false)
+    - (dev_user_brew_prefix_before.stat.pw_name | default('')) != dev_user_name
+    - dev_user_brew_take_ownership | bool
+
+# Run as the account itself, which is what makes it the owner: the installer chowns everything
+# it creates to whoever invoked it. It refuses uid 0, and become_user means the uid is not 0.
+# It calls sudo on its own rather than inheriting this play's escalation, which the grant above
+# already covers.
+- name: Install Homebrew
+  ansible.builtin.shell: |
+    set -o pipefail
+    NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  args:
+    executable: /bin/bash
+    creates: "{{ dev_user_brew_prefix }}/bin/brew"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  when:
+    - dev_user_brew_install | bool
+    - not (dev_user_brew_prefix_before.stat.isdir | default(false))
+
+# Re-stat, and unconditionally: a skipped task overwrites its register with the skip, so a
+# `when` here would erase the very fact it exists to refresh. Everything downstream reads this
+# one, so it has to describe the prefix as it is after the install, not before it.
+- name: Check whether the Homebrew prefix exists
+  ansible.builtin.stat:
+    path: "{{ dev_user_brew_prefix }}"
+  register: dev_user_brew_prefix_stat
+
+# Stated rather than assumed, the same way Claude Code is further down: an installer exiting 0
+# is not the same as a brew that runs, and this is also the first time the play asks the account
+# to use the prefix it now owns.
+- name: Homebrew answers, as the account that owns it
+  ansible.builtin.command: "{{ dev_user_brew_prefix }}/bin/brew --version"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  register: dev_user_brew_version
+  changed_when: false
+  when: dev_user_brew_prefix_stat.stat.isdir | default(false)
 
 # Host keys are pinned before the first clone rather than accepted on sight. The account is
 # created fresh above with an empty known_hosts, so accept_hostkey would take the trust-on-
@@ -377,6 +284,40 @@
       URL, which needs no credential for a public repository.
   when: "'Permission denied (publickey)' in (dev_user_dotfiles_clone.msg | default(''))"
 
+# Before install.sh, not after. install.sh generates ~/.claude/settings.json through
+# claude/build-settings, which requires jq and exits 1 without it; install.sh counts that as a
+# failure and exits non-zero, so on any image that does not already ship jq -- which is a stock
+# Ubuntu -- configuring the home before installing the tools failed the play. The Brewfile is
+# where jq comes from, so the Brewfile goes first.
+#
+# brew runs as the account, reading the Brewfile out of the account's own clone. That is the
+# whole of it: no staging copy, no second account that has to be able to read this home.
+# `bundle check` is what makes it idempotent -- `brew bundle` alone always reports work done,
+# and would mark the play changed on every run.
+- name: Check whether the Brewfile is already satisfied
+  ansible.builtin.command:
+    cmd: "{{ dev_user_brew_prefix }}/bin/brew bundle check --file={{ dev_user_dotfiles_dest }}/Brewfile"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  register: dev_user_brew_check
+  changed_when: false
+  failed_when: false
+  when:
+    - dev_user_brewfile | bool
+    - dev_user_brew_prefix_stat.stat.isdir | default(false)
+
+- name: Install the Brewfile
+  ansible.builtin.command:
+    cmd: "{{ dev_user_brew_prefix }}/bin/brew bundle --file={{ dev_user_dotfiles_dest }}/Brewfile"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  when:
+    - dev_user_brewfile | bool
+    - dev_user_brew_prefix_stat.stat.isdir | default(false)
+    - dev_user_brew_check.rc | default(0) != 0
+  register: dev_user_brew_bundle
+  changed_when: dev_user_brew_bundle.rc == 0
+
 # The repo's own installer, run as the account it is configuring, rather than a second
 # implementation of it here. Linking the configs, generating settings.json and seeding gitconfig
 # were all reimplemented in this role, and both times the base repo changed one the role kept the
@@ -392,6 +333,16 @@
     chdir: "{{ dev_user_dotfiles_dest }}"
   become: true
   become_user: "{{ dev_user_name }}"
+  # The Homebrew prefix has to be on PATH explicitly. install.sh generates settings.json through
+  # claude/build-settings, which needs jq, and jq comes from the Brewfile -- so it lives in the
+  # prefix, not in /usr/bin. `command` does not run a login shell, so none of the shell config
+  # this role just linked has run, and `brew shellenv` with it. Without this the installer links
+  # every config, fails only on settings.json, and exits non-zero.
+  #
+  # It went unnoticed because a GitHub runner ships apt's jq on the default PATH; on a stock
+  # cloud image, which is what this role is for, there is no jq anywhere but the prefix.
+  environment:
+    PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_env.PATH }}"
   register: dev_user_dotfiles_install
   # It marks work with a tick and no-ops with an equals sign, which is the whole reason the dry run
   # and the already-linked check were worth porting.
@@ -411,9 +362,9 @@
   become_user: "{{ dev_user_name }}"
   when: dev_user_claude_code | bool
 
-# Stated rather than assumed, like the mount and the runner service elsewhere: the installer
-# exiting 0 is not the same as a binary that runs, and the launcher is a symlink into a versions
-# directory that a background update rewrites.
+# Stated rather than assumed, like the mount and the brew check above: the installer exiting 0 is
+# not the same as a binary that runs, and the launcher is a symlink into a versions directory that
+# a background update rewrites.
 - name: Claude Code answers
   ansible.builtin.command: "{{ dev_user_home }}/.local/bin/claude --version"
   become: true
@@ -421,63 +372,6 @@
   register: dev_user_claude_version
   changed_when: false
   when: dev_user_claude_code | bool
-
-# Packages live in the shared prefix, so they are installed once by whoever owns it rather
-# than per account. `bundle check` is what makes this idempotent -- `brew bundle` alone
-# always reports work done, and would mark the play changed on every run.
-# brew runs as whoever owns the prefix, and that account cannot read the Brewfile where it
-# lands: useradd honours HOME_MODE, which is 0750 on Ubuntu, so the new home is not
-# traversable by anyone else. Staging it into a root-owned directory keeps the read working
-# without widening the home, and without leaving the path somewhere another local account
-# could pre-create it as a symlink for root to follow.
-- name: Create a root-owned directory to stage the Brewfile in
-  ansible.builtin.file:
-    path: "{{ dev_user_brew_stage_dir }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-  become: true
-  when:
-    - dev_user_brewfile | bool
-    - dev_user_brew_prefix_stat.stat.isdir | default(false)
-
-- name: Stage the Brewfile where the prefix owner can read it
-  ansible.builtin.copy:
-    src: "{{ dev_user_dotfiles_dest }}/Brewfile"
-    dest: "{{ dev_user_brew_stage_dir }}/Brewfile"
-    remote_src: true
-    owner: root
-    group: root
-    mode: "0644"
-  become: true
-  when:
-    - dev_user_brewfile | bool
-    - dev_user_brew_prefix_stat.stat.isdir | default(false)
-
-- name: Check whether the Brewfile is already satisfied
-  ansible.builtin.command:
-    cmd: "{{ dev_user_brew_prefix }}/bin/brew bundle check --file={{ dev_user_brew_stage_dir }}/Brewfile"
-  become: true
-  become_user: "{{ dev_user_brew_runner }}"
-  register: dev_user_brew_check
-  changed_when: false
-  failed_when: false
-  when:
-    - dev_user_brewfile | bool
-    - dev_user_brew_prefix_stat.stat.isdir | default(false)
-
-- name: Install the Brewfile
-  ansible.builtin.command:
-    cmd: "{{ dev_user_brew_prefix }}/bin/brew bundle --file={{ dev_user_brew_stage_dir }}/Brewfile"
-  become: true
-  become_user: "{{ dev_user_brew_runner }}"
-  when:
-    - dev_user_brewfile | bool
-    - dev_user_brew_prefix_stat.stat.isdir | default(false)
-    - dev_user_brew_check.rc | default(0) != 0
-  register: dev_user_brew_bundle
-  changed_when: dev_user_brew_bundle.rc == 0
 
 # The private overlay. This repo is public and deliberately knows nothing about any
 # employer, so the default is empty and the whole block is skipped. Supply the repo in an

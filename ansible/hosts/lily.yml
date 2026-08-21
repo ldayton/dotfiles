@@ -5,11 +5,9 @@
 #
 #   ansible-playbook -i inventory.ini site.yml -e @hosts/lily.yml
 #
-# Everything else this box needs is now the role's own default -- Homebrew, the Brewfile, the
-# zsh those two put in the prefix, Claude Code. This file used to switch three of them off and
-# downgrade the shell to /bin/bash, because the role could not install Homebrew and a cloud
-# image has none. It can now, so the overrides are gone rather than being carried as a preset
-# that quietly provisioned less than the role advertises.
+# Everything else this box needs is the role's own default -- Homebrew, the Brewfile, the shell,
+# Claude Code, and passwordless sudo, which is no longer a flag because an account created with a
+# locked password has no other kind of sudo available to it.
 
 dev_user_authorized_keys:
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHEHSv9U28JSaick1k4nTgA5Fb4nDUM1RYqv/uIlxBZ+ lily.dayton@mac"
@@ -19,8 +17,5 @@ dev_user_authorized_keys:
 # that lives in a public repo. See private.yml.example.
 dev_user_overlay_repo: ""
 
-# Root on a box that belongs to other things is a grant worth naming per host, and this preset
-# names it: these boxes are provisioned to be worked on, and the docker group is root-equivalent
-# anyway, so withholding sudo beside it buys nothing.
-dev_user_sudo_nopasswd: true
+# The docker group is root-equivalent, so it is named per host rather than assumed.
 dev_user_groups: [docker]
