@@ -31,6 +31,7 @@ brew "zsh"         # extended Bourne shell with many improvements
 
 # CLI Utilities
 brew "bat"         # cat clone with syntax highlighting and Git integration
+brew "btop"        # resource monitor with a rich terminal UI
 brew "fd"          # simple, fast alternative to find
 brew "ripgrep"     # ultra-fast grep with smart defaults
 brew "jq"          # lightweight JSON processor
