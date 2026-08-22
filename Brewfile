@@ -8,7 +8,6 @@ brew "typescript"  # typed superset of JavaScript that compiles to plain JS
 brew "ansible"     # provisioning; bundles the collections ansible/ needs
 brew "bazelisk"    # Bazel launcher (auto-switches per .bazelversion)
 brew "direnv"      # load/unload environment variables per directory
-brew "fnm"         # fast Node.js version manager (auto-switches per .nvmrc)
 brew "cloc"        # code statistics
 brew "git"         # distributed version control system
 brew "gh"          # GitHub's official command line tool
