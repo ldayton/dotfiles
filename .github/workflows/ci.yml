@@ -40,7 +40,7 @@ jobs:
           fi
 
       - name: shellcheck
-        run: shellcheck -s bash install.sh gh/gh claude/build-settings
+        run: shellcheck -s bash install.sh gh/gh git/credential-gh-account claude/build-settings
 
       - name: The shells parse it
         run: |

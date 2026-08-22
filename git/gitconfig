@@ -16,3 +16,15 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+# GitHub authentication goes through gh's stored tokens rather than an ssh key. A key can be
+# registered on exactly one GitHub account, so two accounts on one machine cannot both use one;
+# tokens have no such limit, and `gh auth login` on a fresh box replaces copying key material
+# onto it. See git/credential-gh-account for how the account is chosen.
+#
+# The empty helper first is a reset, not an accident: helpers accumulate across system, global
+# and local config and are tried in order, so without it a system helper (osxkeychain, or a
+# leftover `gh auth setup-git` line) answers first and wins with the wrong account. Scoped to
+# github.com, so helpers for every other host survive it.
+[credential "https://github.com"]
+	helper =
+	helper = "!\"$HOME/source/dotfiles/git/credential-gh-account\""
