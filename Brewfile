@@ -71,7 +71,7 @@ cask "font-zed-mono-nerd-font"         # Zed editor font with icons
 
 # macOS only (no Linux formula/cask available)
 if OS.mac?
-  cask "codex"        # OpenAI's coding assistant (use npm on Linux)
+  cask "codex"        # OpenAI's coding assistant (npm on Linux, from the dev_user role)
   cask "gcloud-cli"   # Google Cloud CLI (use apt/dnf on Linux)
 end
 

@@ -373,6 +373,36 @@
   changed_when: false
   when: dev_user_claude_code | bool
 
+# The Brewfile installs this on macOS and cannot here: Homebrew has only a cask for Codex, and
+# casks are macOS-only. npm is what OpenAI document beside the cask and it publishes the same
+# version, so this is the same tool by another route rather than a substitute for it.
+#
+# Global, which with the account's own Homebrew node means the Homebrew prefix -- the account owns
+# it, so no escalation is involved. npm is not on the PATH `command` gets, for the reason the
+# installer above needs the same line: no login shell has run, so `brew shellenv` has not either.
+- name: Codex CLI, from npm
+  community.general.npm:
+    name: "@openai/codex"
+    version: "{{ dev_user_codex_version or omit }}"
+    global: true
+    state: present
+  become: true
+  become_user: "{{ dev_user_name }}"
+  environment:
+    PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_env.PATH }}"
+  when: dev_user_codex | bool
+
+# Stated rather than assumed, as with Claude Code above. npm reporting a package installed says
+# the tarball unpacked; it does not say the launcher resolves or that the platform-specific binary
+# it shells out to exists for this architecture.
+- name: Codex answers
+  ansible.builtin.command: "{{ dev_user_brew_prefix }}/bin/codex --version"
+  become: true
+  become_user: "{{ dev_user_name }}"
+  register: dev_user_codex_reported_version
+  changed_when: false
+  when: dev_user_codex | bool
+
 # The private overlay. This repo is public and deliberately knows nothing about any
 # employer, so the default is empty and the whole block is skipped. Supply the repo in an
 # untracked vars file to turn it on:  ansible-playbook ... -e @private.yml
