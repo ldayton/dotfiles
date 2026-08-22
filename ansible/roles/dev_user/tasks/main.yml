@@ -395,11 +395,19 @@
 # Stated rather than assumed, as with Claude Code above. npm reporting a package installed says
 # the tarball unpacked; it does not say the launcher resolves or that the platform-specific binary
 # it shells out to exists for this architecture.
+#
+# The PATH again, and not for the reason the install task has it: what npm links into the prefix is
+# a script whose shebang is `/usr/bin/env node`, so running it needs node found the same way. Claude
+# Code above gets away without this because what its installer leaves behind is a native binary that
+# asks nothing of the PATH -- which is why the task said `node: No such file or directory` when it
+# was written to that shape, on a box where the install itself had just succeeded.
 - name: Codex answers
   ansible.builtin.command: "{{ dev_user_brew_prefix }}/bin/codex --version"
   become: true
   become_user: "{{ dev_user_name }}"
   register: dev_user_codex_reported_version
+  environment:
+    PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_env.PATH }}"
   changed_when: false
   when: dev_user_codex | bool
 
