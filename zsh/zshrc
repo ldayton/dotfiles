@@ -48,24 +48,6 @@ if [[ -d "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home" ]]; th
     export PATH=$JAVA_HOME/bin:$PATH
 fi
 
-#--- node environment (fnm, auto-switch per .nvmrc) ---#
-# Homebrew installs a newer `node` than projects tend to pin via .nvmrc to match their CI/prod.
-# fnm reads the nearest .nvmrc on cd + at startup and prepends that node to PATH, so the
-# pinned version is used automatically instead of brew's default. (Replaced nvm: ~70ms vs ~1.2s.)
-if command -v fnm &> /dev/null; then
-    eval "$(fnm env --use-on-cd --version-file-strategy recursive)"
-    # `nvm` muscle-memory shim → fnm: the subcommands overlap, so translate the few I still type.
-    nvm() {
-        case "$1" in
-            ls|list) shift; fnm list "$@" ;;
-            # the operands are reversed between the two: nvm is name-then-version
-            alias) shift; [[ $# -ge 2 ]] && fnm alias "$2" "$1" || fnm alias "$@" ;;
-            "") fnm --help ;;
-            *) fnm "$@" ;;
-        esac
-    }
-fi
-
 #--- AI assistants ---#
 # -U keeps PATH deduplicated, so sourcing this file twice does not compound the prepends below
 typeset -U path
