@@ -380,17 +380,32 @@
 # Global, which with the account's own Homebrew node means the Homebrew prefix -- the account owns
 # it, so no escalation is involved. npm is not on the PATH `command` gets, for the reason the
 # installer above needs the same line: no login shell has run, so `brew shellenv` has not either.
+#
+# That whole sentence is about the account's own npm, so it is the one named, and the pair is
+# skipped where it is absent rather than falling through to whatever npm the PATH turns up. A
+# system npm installs into a prefix this account may not own and leaves the binary somewhere the
+# check below does not look, which is what the executed-role job saw: it runs with the Brewfile
+# off, the install went to the runner's own npm, and `{{ dev_user_brew_prefix }}/bin/codex` was
+# never written. A box without the Brewfile has no Codex until it has one.
+- name: Whether the account has an npm of its own to install with
+  ansible.builtin.stat:
+    path: "{{ dev_user_brew_prefix }}/bin/npm"
+  register: dev_user_brew_npm
+
 - name: Codex CLI, from npm
   community.general.npm:
     name: "@openai/codex"
     version: "{{ dev_user_codex_version or omit }}"
+    executable: "{{ dev_user_brew_prefix }}/bin/npm"
     global: true
     state: present
   become: true
   become_user: "{{ dev_user_name }}"
   environment:
     PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
-  when: dev_user_codex | bool
+  when:
+    - dev_user_codex | bool
+    - dev_user_brew_npm.stat.exists
 
 # Stated rather than assumed, as with Claude Code above. npm reporting a package installed says
 # the tarball unpacked; it does not say the launcher resolves or that the platform-specific binary
@@ -409,7 +424,9 @@
   environment:
     PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   changed_when: false
-  when: dev_user_codex | bool
+  when:
+    - dev_user_codex | bool
+    - dev_user_brew_npm.stat.exists
 
 # The private overlay. This repo is public and deliberately knows nothing about any
 # employer, so the default is empty and the whole block is skipped. Supply the repo in an
