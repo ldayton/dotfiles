@@ -342,7 +342,7 @@
   # It went unnoticed because a GitHub runner ships apt's jq on the default PATH; on a stock
   # cloud image, which is what this role is for, there is no jq anywhere but the prefix.
   environment:
-    PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   register: dev_user_dotfiles_install
   # It marks work with a tick and no-ops with an equals sign, which is the whole reason the dry run
   # and the already-linked check were worth porting.
@@ -389,7 +389,7 @@
   become: true
   become_user: "{{ dev_user_name }}"
   environment:
-    PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   when: dev_user_codex | bool
 
 # Stated rather than assumed, as with Claude Code above. npm reporting a package installed says
@@ -407,7 +407,7 @@
   become_user: "{{ dev_user_name }}"
   register: dev_user_codex_reported_version
   environment:
-    PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ dev_user_brew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   changed_when: false
   when: dev_user_codex | bool
 
