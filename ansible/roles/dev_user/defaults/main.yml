@@ -105,3 +105,13 @@ dev_user_brewfile: true
 # keeps the tool inside the home, like everything else this role puts there.
 dev_user_claude_code: true
 dev_user_claude_code_channel: ""
+
+# Codex CLI. The Brewfile covers macOS with a cask, but Homebrew publishes no formula for it, and
+# casks do not exist on Linux -- hence npm here, which is the install OpenAI document alongside the
+# cask and which ships the same version. So this needs the Brewfile: npm arrives with node, out of
+# the prefix. It installs globally, which for that node means into the prefix rather than the home,
+# and the account owns the prefix outright -- so it is that npm the role installs with, and a box
+# whose prefix has none is one this leaves alone. Empty takes the latest release; set an exact
+# version to pin one, for the reason the Claude Code channel gives.
+dev_user_codex: true
+dev_user_codex_version: ""
