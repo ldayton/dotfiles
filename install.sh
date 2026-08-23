@@ -109,6 +109,11 @@ link "$DOTFILES/atuin/config.toml" "$HOME/.config/atuin/config.toml"
 
 link "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
 
+# Saving from zellij's own configuration plugin (Ctrl-o c) rewrites config.kdl in place as a
+# ~650-line expansion of every default. Through the link that lands in the repo, where the
+# diff is at least visible and revertible -- but edit the tracked file instead.
+link "$DOTFILES/zellij/config.kdl" "$HOME/.config/zellij/config.kdl"
+
 # settings.json is generated, not linked. Claude Code writes into it, and a tracked file it
 # writes to needed a clean filter to keep `model` out of commits plus skip-worktree to silence
 # what the filter could not -- and skip-worktree makes git ignore the file outright, which is
