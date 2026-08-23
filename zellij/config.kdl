@@ -1,6 +1,14 @@
 // Locked by default: keystrokes go to whatever is running in the pane, not to zellij.
 // Ctrl-g unlocks.
 default_mode "locked"
+
+// Only applied to a session with no serialized layout in the cache. zellij restores
+// ~/.cache/zellij/*/session_info/<name>/session-layout.kdl ahead of this setting, so
+// `zellij attach --create <name>` on a name that existed before this line was added comes
+// back with the old tab-bar/status-bar pair and never picks up compact. Verified by planting
+// a tab-bar session-layout.kdl under a fresh name: it resurrected tab-bar, config ignored.
+// To convert such a session, discard its saved state with `zellij delete-session --force
+// <name>` and recreate it -- that drops its remembered panes and cwds.
 default_layout "compact"
 show_startup_tips false
 
