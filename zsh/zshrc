@@ -100,7 +100,11 @@ claude() {
     mkdir -p ~/.claude
     # settings.json is generated rather than linked, so the file Claude Code writes into is
     # not one git tracks. build-settings carries `model` across the rebuild.
-    build-settings || return 1
+    #
+    # Its stdout is `unchanged` or `updated`, a result for install.sh and the ansible role to
+    # read -- not a message. Here it would print on every launch, land in the capture when
+    # stdout is redirected (`claude -p ... > out`), and be wiped by the fullscreen TUI anyway.
+    build-settings >/dev/null || return 1
     # Build to a temp file and move it into place: `>` truncates before cat runs, so a
     # missing or renamed base file used to leave a zero-byte CLAUDE.md. The mv also makes
     # this safe when two shells start at once.
