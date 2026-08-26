@@ -12,6 +12,7 @@
 dev_user_authorized_keys:
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHEHSv9U28JSaick1k4nTgA5Fb4nDUM1RYqv/uIlxBZ+ lily.dayton@mac"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA3frltPWfDQwvR8Cb4CnsSjR605S/lSLTsI0IG2aG8D lily.dayton@wsl"
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEYpJDDLYECSVVOgvJY2rTcTwVEVGKXnlpVwM96KIgmN lily.dayton@studio"
 
 # The private overlay stays off here: it is named in an untracked vars file, not in a preset
 # that lives in a public repo. See private.yml.example.
